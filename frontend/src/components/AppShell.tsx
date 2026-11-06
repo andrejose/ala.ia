@@ -1,6 +1,7 @@
-import { ArrowLeftRight, Ellipsis, LayoutDashboard, Plus, Tags, Users, Wallet, type LucideIcon } from "lucide-react";
+import { ArrowLeftRight, Ellipsis, LayoutDashboard, Plus, Tags, Wallet, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
+import { useTransactionSheet } from "../features/transactions/TransactionSheet";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -16,10 +17,8 @@ const mainNav: NavItem[] = [
   { to: "/contas", label: "Contas", icon: Wallet },
 ];
 
-const moreNav: NavItem[] = [
-  { to: "/categorias", label: "Categorias", icon: Tags },
-  { to: "/household", label: "Household", icon: Users },
-];
+// Household e membros entram aqui quando a tela existir (fase 5)
+const moreNav: NavItem[] = [{ to: "/categorias", label: "Categorias", icon: Tags }];
 
 // Estrutura das telas logadas:
 //   celular    -> conteúdo + barra inferior com botão "+" no centro
@@ -35,13 +34,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function Sidebar() {
+  const sheet = useTransactionSheet();
   return (
     <aside className="sticky top-0 hidden h-dvh flex-col gap-8 border-r border-line bg-surface/60 px-5 py-7 lg:flex">
       <div className="px-2">
         <Logo />
       </div>
 
-      <button className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-ink shadow-card transition hover:brightness-110">
+      <button
+        type="button"
+        onClick={() => sheet.openNew()}
+        className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-ink shadow-card transition hover:brightness-110"
+      >
         <Plus className="size-5" aria-hidden="true" />
         Novo lançamento
       </button>
@@ -78,6 +82,7 @@ function SidebarLink({ to, label, icon: Icon }: NavItem) {
 }
 
 function BottomNav() {
+  const sheet = useTransactionSheet();
   return (
     <nav
       aria-label="Principal"
@@ -88,6 +93,8 @@ function BottomNav() {
         <BottomLink {...mainNav[1]} />
         <div className="grid place-items-center">
           <button
+            type="button"
+            onClick={() => sheet.openNew()}
             aria-label="Novo lançamento"
             className="-mt-7 grid size-14 place-items-center rounded-full bg-primary text-primary-ink shadow-card ring-4 ring-bg transition active:scale-95"
           >

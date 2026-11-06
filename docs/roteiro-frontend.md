@@ -46,11 +46,11 @@ interface, com algarismos tabulares nos valores).
 | :--- | :--- | :--- | :--- |
 | 1 | Entrada | Login e cadastro | ✅ |
 | 2 | Painel | Saldo total, resumo do mês, gastos por categoria, últimos lançamentos, troca de household e sair | ✅ |
-| 3 | Lançamentos | Lista com filtros; formulário de receita, despesa e transferência; marcar como pago | ⏳ |
-| 4 | Contas | Lista com saldo; criar, editar e arquivar | ⏳ |
-| 5 | Categorias | Receitas e despesas, com cor e ícone | ⏳ |
+| 3 | Lançamentos | Lista por mês e por dia, com filtros (tipo, situação, conta); formulário de receita, despesa e transferência no botão +; marcar como pago; editar e excluir | ✅ |
+| 4 | Contas | Lista com saldo; criar, editar, arquivar, reativar e excluir (com aviso quando há lançamentos) | ✅ |
+| 5 | Categorias | Receitas e despesas, com cor e ícone; criar também de dentro do formulário de lançamento | ✅ |
 | 6 | Household | Trocar de household, membros e convite por e-mail | ⏳ |
-| 7 | Perfil | Nome, tema e sair | ⏳ |
+| 7 | Perfil | Nome, tema e sair | 🟡 tema e sair na página Mais; editar nome pendente |
 
 Legenda: 🎨 protótipo com dados fictícios · ✅ integrado à API · ⏳ pendente
 
@@ -58,8 +58,8 @@ Legenda: 🎨 protótipo com dados fictícios · ✅ integrado à API · ⏳ pen
 
 1. **Fundação e proposta visual** — projeto, tokens de design, temas, logo, protótipo do login e do painel. ✅ Aprovado.
 2. **Autenticação** — cliente da API, sessão com renovação automática, rotas protegidas, login e cadastro reais. ✅
-3. **Painel e lançamentos** — ✅ painel com dados reais e estados de carregamento, vazio e erro. ⏳ Tela de lançamentos, formulário (botão +) e filtros.
-4. **Contas e categorias.**
+3. **Painel e lançamentos** — ✅ painel com dados reais; tela de lançamentos, formulário no botão + e filtros.
+4. **Contas e categorias.** ✅
 5. **Households, membros e perfil.**
 6. **Acabamento** — estados vazios, carregamento e erro; acessibilidade; README.
 

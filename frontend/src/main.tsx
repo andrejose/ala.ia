@@ -5,8 +5,13 @@ import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
+import { createBrowserRouter, Navigate, Outlet, RouterProvider } from "react-router";
 import { AppShell } from "./components/AppShell";
+import { AccountsPage } from "./features/accounts/AccountsPage";
+import { CategoriesPage } from "./features/categories/CategoriesPage";
+import { MorePage } from "./features/more/MorePage";
+import { TransactionsPage } from "./features/transactions/TransactionsPage";
+import { TransactionSheetProvider } from "./features/transactions/TransactionSheet";
 import { AuthProvider } from "./features/auth/AuthProvider";
 import { RedirectIfAuthenticated, RequireAuth } from "./features/auth/guards";
 import { LoginPage } from "./features/auth/LoginPage";
@@ -35,9 +40,11 @@ function Root() {
 function LoggedIn() {
   return (
     <HouseholdProvider>
-      <AppShell>
-        <Outlet />
-      </AppShell>
+      <TransactionSheetProvider>
+        <AppShell>
+          <Outlet />
+        </AppShell>
+      </TransactionSheetProvider>
     </HouseholdProvider>
   );
 }
@@ -54,8 +61,11 @@ const router = createBrowserRouter([
             element: <LoggedIn />,
             children: [
               { index: true, element: <DashboardPage /> },
-              // Telas das próximas fases: por enquanto voltam para o painel
-              { path: "*", element: <DashboardPage /> },
+              { path: "lancamentos", element: <TransactionsPage /> },
+              { path: "contas", element: <AccountsPage /> },
+              { path: "categorias", element: <CategoriesPage /> },
+              { path: "mais", element: <MorePage /> },
+              { path: "*", element: <Navigate to="/" replace /> },
             ],
           },
         ],
