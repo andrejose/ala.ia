@@ -1,5 +1,7 @@
 # ala.ia
 
+[![CI](https://github.com/andrejose/ala.ia/actions/workflows/ci.yml/badge.svg)](https://github.com/andrejose/ala.ia/actions/workflows/ci.yml)
+
 API REST para um sistema de controle financeiro pessoal.
 
 **ALA** = **A**utonomia, **L**iberdade e **A**utocontrole — conquistar liberdade financeira por meio do conhecimento e da organização dos gastos.
@@ -133,6 +135,17 @@ npx supabase start
 cp .env.test.example .env.test   # preencha o PUBLISHABLE_KEY de `npx supabase status`
 npm test
 ```
+
+## Integração contínua (CI)
+
+O GitHub Actions roda o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) a cada pull request e a cada push na `main`:
+
+| Job | O que faz |
+| :-- | :-- |
+| Backend | Sobe o Supabase local no runner (Docker), aplica as migrations e roda os testes de integração (`npm test`) |
+| Frontend | Checa os tipos (`npm run typecheck`) e faz o build (`npm run build`) |
+
+O CI não usa o projeto Supabase remoto nem segredos do repositório. Se um teste falhar, os logs do Supabase aparecem no próprio job.
 
 ## Equipe
 
