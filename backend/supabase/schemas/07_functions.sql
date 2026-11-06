@@ -10,13 +10,8 @@
 -- O nome vem dos metadados do signUp:
 --   supabase.auth.signUp({ email, password, options: { data: { name } } })
 --
--- ATENÇÃO: o trigger em auth.users NÃO é capturado pelo "supabase db diff"
--- (schema auth é gerenciado pelo Supabase). Crie-o em uma migration manual:
---   npx supabase migration new on_auth_user_created
--- com o conteúdo:
---   create trigger on_auth_user_created
---     after insert on auth.users
---     for each row execute function public.handle_new_user();
+-- O trigger em auth.users fica declarado no fim desta função. Ele precisa estar
+-- aqui: sem ele, o "supabase db schema declarative sync" gera um DROP TRIGGER.
 -- -----------------------------------------------------------------------------
 create or replace function public.handle_new_user()
 returns trigger
@@ -46,6 +41,10 @@ begin
   return new;
 end;
 $$;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
 
 -- -----------------------------------------------------------------------------
 -- Cria um novo household tendo o usuário logado como dono.
@@ -78,15 +77,20 @@ $$;
 
 -- -----------------------------------------------------------------------------
 -- Compartilha um household com outro usuário já cadastrado, pelo email.
--- Apenas o dono do household pode convidar.
--- Uso: supabase.rpc('invite_member', { p_household_id, p_email })
+-- Apenas o dono do household pode convidar. Retorna o id do usuário adicionado.
+-- Uso: supabase.rpc('invite_member', { p_household_id, p_email, p_role })
+--
+-- Erros (SQLSTATE), traduzidos pela API:
+--   42501 -> quem chamou não é dono do household (403)
+--   P0002 -> nenhum usuário com esse email (404)
+--   23505 -> o usuário já é membro do household (409)
 -- -----------------------------------------------------------------------------
 create or replace function public.invite_member(
   p_household_id uuid,
   p_email        varchar,
   p_role         public.member_role default 'member'
 )
-returns void
+returns uuid
 language plpgsql
 security definer
 set search_path = ''
@@ -95,7 +99,8 @@ declare
   v_invited_id uuid;
 begin
   if not public.is_household_owner(p_household_id) then
-    raise exception 'Apenas o dono do household pode convidar membros.';
+    raise exception 'Apenas o dono do household pode convidar membros.'
+      using errcode = '42501';
   end if;
 
   select id into v_invited_id
@@ -103,12 +108,22 @@ begin
   where lower(email) = lower(trim(p_email));
 
   if v_invited_id is null then
-    raise exception 'Nenhum usuário cadastrado com o email informado.';
+    raise exception 'Nenhum usuário cadastrado com o email informado.'
+      using errcode = 'P0002';
+  end if;
+
+  if exists (
+    select 1 from public.household_members
+    where household_id = p_household_id and user_id = v_invited_id
+  ) then
+    raise exception 'Este usuário já é membro do household.'
+      using errcode = '23505';
   end if;
 
   insert into public.household_members (household_id, user_id, role)
-  values (p_household_id, v_invited_id, p_role)
-  on conflict (household_id, user_id) do nothing;
+  values (p_household_id, v_invited_id, p_role);
+
+  return v_invited_id;
 end;
 $$;
 

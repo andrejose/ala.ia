@@ -61,12 +61,14 @@ Todos os dados financeiros pertencem a um **household** (grupo compartilhado). A
 | `transactions`      | Receitas, despesas e transferências                            |
 | `account_balances`  | View com o saldo atual de cada conta (só transações pagas)     |
 
-Funções RPC: `create_household(p_name)` e `invite_member(p_household_id, p_email, p_role)`.
+Funções RPC: `create_household(p_name)`, `invite_member(p_household_id, p_email, p_role)`, `report_monthly_summary(p_household_id, p_month)` e `report_by_category(p_household_id, p_month, p_type)`.
+
+Regra garantida no banco: todo household tem pelo menos um dono (trigger `ensure_household_has_owner`).
 
 ### Alterando o schema
 
 1. Edite os arquivos em `backend/supabase/schemas/`
-2. Gere a migration: `npx supabase db diff -f nome_da_mudanca`
+2. Gere a migration: `npx supabase db schema declarative sync --name nome_da_mudanca --no-apply` e revise o arquivo gerado (procure `DROP` inesperado)
 3. Teste localmente: `npx supabase db reset`
 4. Envie ao projeto remoto: `npx supabase db push --remote`
 
@@ -117,4 +119,4 @@ npm test
 
 ## Status
 
-🚧 Schema do banco criado; autenticação, perfil e Swagger prontos. Próximos passos em [docs/roteiro-backend.md](docs/roteiro-backend.md).
+🚧 MVP da API implementado: autenticação, perfil, households e membros, contas, categorias, lançamentos e relatórios, com Swagger e testes de integração. Detalhes e pendências em [docs/roteiro-backend.md](docs/roteiro-backend.md).

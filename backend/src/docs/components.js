@@ -89,12 +89,140 @@ export const components = {
       },
     },
 
-    HouseholdMembership: {
+    Household: {
       type: "object",
       properties: {
         id: { type: "string", format: "uuid" },
         name: { type: "string", example: "Finanças de Maria Silva" },
+        role: { type: "string", enum: ["owner", "member"], description: "Papel do usuário logado neste household." },
+        created_at: { type: "string", format: "date-time" },
+        updated_at: { type: "string", format: "date-time" },
+      },
+    },
+
+    Member: {
+      type: "object",
+      properties: {
+        user_id: { type: "string", format: "uuid" },
+        name: { type: ["string", "null"], example: "João Souza" },
         role: { type: "string", enum: ["owner", "member"] },
+        joined_at: { type: "string", format: "date-time" },
+      },
+    },
+
+    Account: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        household_id: { type: "string", format: "uuid" },
+        name: { type: "string", example: "Nubank" },
+        type: { type: "string", enum: ["checking", "savings", "investment", "cash"] },
+        is_active: { type: "boolean", description: "false = conta arquivada." },
+        initial_balance: { type: "number", example: 1000 },
+        current_balance: {
+          type: "number",
+          example: 1250.4,
+          description: "Saldo inicial + lançamentos pagos (pendentes não contam).",
+        },
+      },
+    },
+
+    Category: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        household_id: { type: "string", format: "uuid" },
+        name: { type: "string", example: "Mercado" },
+        type: { type: "string", enum: ["income", "expense"] },
+        color: { type: ["string", "null"], example: "#FF8800" },
+        icon: { type: ["string", "null"], example: "shopping-cart" },
+        created_at: { type: "string", format: "date-time" },
+        updated_at: { type: "string", format: "date-time" },
+      },
+    },
+
+    Transaction: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        household_id: { type: "string", format: "uuid" },
+        type: { type: "string", enum: ["income", "expense", "transfer"] },
+        description: { type: "string", example: "Supermercado" },
+        amount: { type: "number", example: 150.5, description: "Sempre positivo; o tipo define se entra ou sai." },
+        account_id: { type: "string", format: "uuid", description: "Conta de origem (ou a conta da receita/despesa)." },
+        destination_account_id: { type: ["string", "null"], format: "uuid", description: "Só em transferências." },
+        category_id: { type: ["string", "null"], format: "uuid", description: "Obrigatória em receitas e despesas." },
+        due_date: { type: "string", format: "date", example: "2026-11-06" },
+        payment_date: { type: ["string", "null"], format: "date", description: "null = pendente." },
+        user_id: { type: ["string", "null"], format: "uuid", description: "Quem lançou." },
+        created_at: { type: "string", format: "date-time" },
+        updated_at: { type: "string", format: "date-time" },
+      },
+    },
+
+    TransactionList: {
+      type: "object",
+      properties: {
+        data: { type: "array", items: { $ref: "#/components/schemas/Transaction" } },
+        pagination: {
+          type: "object",
+          properties: {
+            total: { type: "integer", example: 42 },
+            limit: { type: "integer", example: 50 },
+            offset: { type: "integer", example: 0 },
+          },
+        },
+      },
+    },
+
+    ReportSummary: {
+      type: "object",
+      properties: {
+        month: { type: "string", example: "2026-10" },
+        income: { $ref: "#/components/schemas/PaidPendingTotal" },
+        expense: { $ref: "#/components/schemas/PaidPendingTotal" },
+        balance: {
+          type: "object",
+          description: "Receitas menos despesas.",
+          properties: {
+            paid: { type: "number", example: 2949.5, description: "Só o que já foi pago/recebido." },
+            total: { type: "number", example: 3149.5, description: "Incluindo pendentes." },
+          },
+        },
+      },
+    },
+
+    PaidPendingTotal: {
+      type: "object",
+      properties: {
+        paid: { type: "number", example: 5000 },
+        pending: { type: "number", example: 300 },
+        total: { type: "number", example: 5300 },
+      },
+    },
+
+    ReportByCategory: {
+      type: "object",
+      properties: {
+        month: { type: "string", example: "2026-10" },
+        type: { type: "string", enum: ["income", "expense"] },
+        total: { type: "number", example: 2150.5 },
+        categories: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              category_id: { type: "string", format: "uuid" },
+              name: { type: "string", example: "Aluguel" },
+              color: { type: ["string", "null"] },
+              icon: { type: ["string", "null"] },
+              total: { type: "number", example: 1800 },
+              paid: { type: "number", example: 1800 },
+              pending: { type: "number", example: 0 },
+              transaction_count: { type: "integer", example: 1 },
+            },
+          },
+        },
       },
     },
 
@@ -106,7 +234,7 @@ export const components = {
         email: { type: "string", format: "email", example: "maria@example.com" },
         created_at: { type: "string", format: "date-time" },
         updated_at: { type: "string", format: "date-time" },
-        households: { type: "array", items: { $ref: "#/components/schemas/HouseholdMembership" } },
+        households: { type: "array", items: { $ref: "#/components/schemas/Household" } },
       },
     },
   },
@@ -115,5 +243,7 @@ export const components = {
     ValidationError: errorResponse("Dados inválidos (body, params ou query).", "VALIDATION_ERROR", "Dados inválidos."),
     Unauthorized: errorResponse("Token ausente, inválido ou expirado.", "INVALID_TOKEN", "Token inválido ou expirado."),
     RateLimited: errorResponse("Limite de tentativas do Supabase Auth atingido.", "RATE_LIMITED", "Muitas tentativas. Aguarde e tente novamente."),
+    NotFound: errorResponse("Recurso não encontrado, ou household do qual o usuário não é membro.", "NOT_FOUND", "Recurso não encontrado."),
+    OwnerOnly: errorResponse("Operação restrita ao dono (owner) do household.", "FORBIDDEN", "Apenas o dono do household pode fazer esta operação."),
   },
 };

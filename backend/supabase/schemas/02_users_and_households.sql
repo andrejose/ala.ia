@@ -52,6 +52,50 @@ create table public.household_members (
 create index household_members_user_id_idx on public.household_members (user_id);
 
 -- -----------------------------------------------------------------------------
+-- Todo household precisa de pelo menos um dono (owner).
+-- Impede que o único owner saia, seja removido ou seja rebaixado a member.
+-- Exclusões em cascata (o household ou o usuário sendo excluído) são permitidas.
+-- Erro com SQLSTATE próprio 'AL001', que a API traduz para 409.
+-- -----------------------------------------------------------------------------
+create or replace function public.ensure_household_has_owner()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  -- Só interessa quando um owner deixa de ser owner daquele household
+  if old.role <> 'owner'
+     or (tg_op = 'UPDATE' and new.role = 'owner' and new.household_id = old.household_id) then
+    return coalesce(new, old);
+  end if;
+
+  -- Cascata: o household ou o perfil do usuário já foi excluído nesta transação
+  if not exists (select 1 from public.households where id = old.household_id)
+     or not exists (select 1 from public.profiles where id = old.user_id) then
+    return coalesce(new, old);
+  end if;
+
+  if not exists (
+    select 1
+    from public.household_members
+    where household_id = old.household_id
+      and role = 'owner'
+      and user_id <> old.user_id
+  ) then
+    raise exception 'O household precisa de pelo menos um dono. Promova outro membro a dono antes ou exclua o household.'
+      using errcode = 'AL001';
+  end if;
+
+  return coalesce(new, old);
+end;
+$$;
+
+create trigger household_members_ensure_owner
+  before update or delete on public.household_members
+  for each row execute function public.ensure_household_has_owner();
+
+-- -----------------------------------------------------------------------------
 -- Funções auxiliares usadas nas políticas de RLS.
 -- SECURITY DEFINER evita recursão infinita ao consultar household_members
 -- dentro das próprias políticas de household_members.

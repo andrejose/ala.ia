@@ -27,7 +27,13 @@ export function validate(schemas) {
       throw new HttpError(400, "VALIDATION_ERROR", "Dados inválidos.", details);
     }
 
-    req.validated = validated;
+    // Acumula com validações anteriores (ex.: o :householdId validado no router pai)
+    const previous = req.validated ?? {};
+    req.validated = {
+      params: { ...previous.params, ...validated.params },
+      query: validated.query ?? previous.query,
+      body: validated.body ?? previous.body,
+    };
     next();
   };
 }
