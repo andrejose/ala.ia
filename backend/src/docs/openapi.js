@@ -1,5 +1,7 @@
 import { components } from "./components.js";
 import { authPaths } from "./paths/auth.js";
+import { financePaths } from "./paths/finance.js";
+import { householdPaths } from "./paths/households.js";
 import { mePaths } from "./paths/me.js";
 
 // Especificação OpenAPI servida em /docs (Swagger UI) e /docs.json.
@@ -8,7 +10,7 @@ export const openApiSpec = {
   openapi: "3.1.0",
   info: {
     title: "Ala.ia API",
-    version: "0.1.0",
+    version: "0.2.0",
     description:
       "API REST de controle financeiro pessoal.\n\n" +
       "**Como testar:** faça `POST /auth/signup` ou `POST /auth/login`, copie o `session.access_token` " +
@@ -19,6 +21,12 @@ export const openApiSpec = {
     { name: "Sistema" },
     { name: "Autenticação", description: "Cadastro, login e sessão (Supabase Auth)" },
     { name: "Perfil", description: "Dados do usuário logado" },
+    { name: "Households", description: "Grupos que compartilham as finanças (ex.: um casal)" },
+    { name: "Membros", description: "Quem tem acesso a cada household" },
+    { name: "Contas", description: "Contas do household, com saldo calculado" },
+    { name: "Categorias", description: "Categorias de receitas e despesas" },
+    { name: "Lançamentos", description: "Receitas, despesas e transferências" },
+    { name: "Relatórios", description: "Resumo do mês e gastos por categoria" },
   ],
   // Por padrão toda rota exige o token; rotas públicas declaram "security: []"
   security: [{ bearerAuth: [] }],
@@ -38,6 +46,8 @@ export const openApiSpec = {
     },
     ...authPaths,
     ...mePaths,
+    ...householdPaths,
+    ...financePaths,
   },
   components,
 };

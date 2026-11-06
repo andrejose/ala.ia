@@ -10,9 +10,6 @@ export function fromPostgrestError(error) {
     case "PGRST116": // .single() sem linha (inclusive quando o RLS esconde a linha)
       return new HttpError(404, "NOT_FOUND", "Recurso não encontrado.");
 
-    case "23505":
-      return new HttpError(409, "CONFLICT", "Já existe um registro com esses dados.");
-
     case "23503":
       // Delete de algo referenciado (ex.: conta com lançamentos) x
       // insert/update apontando para algo inválido (ex.: conta de outro household)
@@ -20,7 +17,7 @@ export function fromPostgrestError(error) {
         return new HttpError(
           409,
           "RESOURCE_IN_USE",
-          "O registro está em uso e não pode ser excluído. Considere arquivá-lo."
+          "O registro está em uso por lançamentos e não pode ser excluído nem ter esse campo alterado."
         );
       }
       return new HttpError(
@@ -41,8 +38,20 @@ export function fromPostgrestError(error) {
     case "42501":
       return new HttpError(403, "FORBIDDEN", "Você não tem permissão para esta operação.");
 
-    case "P0001": // raise exception das funções RPC
+    case "23505":
+      // Mensagem em português vinda das nossas funções (ex.: invite_member)
+      return new HttpError(409, "CONFLICT", error.message?.startsWith("duplicate key")
+        ? "Já existe um registro com esses dados."
+        : error.message);
+
+    case "P0001": // raise exception sem errcode nas funções RPC
       return new HttpError(400, "BUSINESS_RULE", error.message);
+
+    case "P0002": // no_data_found, ex.: invite_member com e-mail não cadastrado
+      return new HttpError(404, "NOT_FOUND", error.message);
+
+    case "AL001": // trigger ensure_household_has_owner
+      return new HttpError(409, "LAST_OWNER", error.message);
 
     case "PGRST301":
     case "PGRST303":
