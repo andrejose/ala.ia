@@ -54,12 +54,12 @@ export function ProfileMenu({ name, email }: { name: string; email: string }) {
           </Link>
           <Link
             role="menuitem"
-            to="/household"
+            to="/espaco"
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 font-semibold text-muted transition hover:bg-surface-2 hover:text-ink"
           >
             <Users className="size-4" aria-hidden="true" />
-            Household e convites
+            Espaço e convites
           </Link>
           <button
             role="menuitem"

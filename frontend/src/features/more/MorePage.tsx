@@ -29,9 +29,9 @@ export function MorePage() {
             <span id="more-title">Mais</span>
           </SectionTitle>
           <Card className="divide-y divide-line overflow-hidden">
-            <Link to="/household" className="flex items-center gap-3 px-4 py-4 font-semibold transition hover:bg-surface-2/60">
+            <Link to="/espaco" className="flex items-center gap-3 px-4 py-4 font-semibold transition hover:bg-surface-2/60">
               <Users className="size-5 text-primary" aria-hidden="true" />
-              <span className="flex-1">Household e convites</span>
+              <span className="flex-1">Espaço e convites</span>
               <ChevronRight className="size-4 text-muted" aria-hidden="true" />
             </Link>
             <Link to="/categorias" className="flex items-center gap-3 px-4 py-4 font-semibold transition hover:bg-surface-2/60">

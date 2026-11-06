@@ -21,7 +21,7 @@ export function HouseholdNameSheet({
   onCreated?: (household: Household) => void;
 }) {
   return (
-    <Sheet open={open} onClose={onClose} title={household ? "Renomear household" : "Novo household"}>
+    <Sheet open={open} onClose={onClose} title={household ? "Renomear espaço" : "Novo espaço"}>
       {open && <NameForm key={household?.id ?? "new"} household={household} onDone={onClose} onCreated={onCreated} />}
     </Sheet>
   );
@@ -57,7 +57,7 @@ function NameForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {!household && (
         <p className="text-muted">
-          Um household separa um conjunto de finanças: as contas da casa com o seu par, por exemplo, longe das
+          Um espaço separa um conjunto de finanças: as contas da casa com o seu par, por exemplo, longe das
           suas contas pessoais. Você será o dono e poderá convidar outras pessoas.
         </p>
       )}
@@ -74,7 +74,7 @@ function NameForm({
       />
       {save.error && !fieldErrors(save.error).name && <FormError>{errorMessage(save.error)}</FormError>}
       <Button type="submit" className="w-full" disabled={save.isPending}>
-        {save.isPending ? "Salvando…" : household ? "Salvar nome" : "Criar household"}
+        {save.isPending ? "Salvando…" : household ? "Salvar nome" : "Criar espaço"}
       </Button>
     </form>
   );
@@ -129,7 +129,7 @@ function InviteForm({ householdId, onDone }: { householdId: string; onDone: () =
         label="Papel"
         value={role}
         onChange={(e) => setRole(e.target.value as Role)}
-        hint={role === "owner" ? "Dono pode convidar, remover pessoas, renomear e excluir o household." : "Membro vê e lança as finanças do household."}
+        hint={role === "owner" ? "Dono pode convidar, remover pessoas, renomear e excluir o espaço." : "Membro vê e lança as finanças do espaço."}
       >
         <option value="member">Membro</option>
         <option value="owner">Dono</option>

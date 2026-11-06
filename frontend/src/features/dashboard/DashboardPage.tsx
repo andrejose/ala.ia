@@ -66,7 +66,7 @@ function Header() {
 
         {households.length > 1 ? (
           <label className="relative mt-2 inline-flex max-w-full items-center">
-            <span className="sr-only">Household em uso</span>
+            <span className="sr-only">Espaço em uso</span>
             <select
               value={household.id}
               onChange={(event) => selectHousehold(event.target.value)}

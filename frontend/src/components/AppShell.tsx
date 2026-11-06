@@ -19,7 +19,7 @@ const mainNav: NavItem[] = [
 
 const moreNav: NavItem[] = [
   { to: "/categorias", label: "Categorias", icon: Tags },
-  { to: "/household", label: "Household", icon: Users },
+  { to: "/espaco", label: "Espaço", icon: Users },
   { to: "/mais", label: "Perfil", icon: UserRound },
 ];
 

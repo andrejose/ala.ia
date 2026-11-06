@@ -11,6 +11,7 @@ Documento vivo do frontend do Ala.ia. O frontend não é o objetivo da disciplin
 | Local | Pasta `frontend/`, ao lado de `backend/` |
 | Dispositivo | Celular primeiro, funcionando bem no computador |
 | Idioma e formatos | Português do Brasil; valores em R$ (`1.234,56`); datas `dd/mm/aaaa` |
+| Nome do "household" | Na interface, **Espaço** (tela em `/espaco`). Código, banco e API continuam com `household`; as mensagens de erro da API são ajustadas em `src/lib/api.ts` antes de aparecer na tela |
 | Visual | Humano e acolhedor; tema claro e escuro (segue o sistema, com alternância manual) |
 | Sessão | `access_token` em memória; `refresh_token` no `localStorage`; renovação automática ao expirar |
 | Comunicação com a API | Proxy do Vite em desenvolvimento (`/api` → `http://localhost:3001`), sem CORS. Para publicar, adicionar CORS no backend |
@@ -49,7 +50,7 @@ interface, com algarismos tabulares nos valores).
 | 3 | Lançamentos | Lista por mês e por dia, com filtros (tipo, situação, conta); formulário de receita, despesa e transferência no botão +; marcar como pago; editar e excluir | ✅ |
 | 4 | Contas | Lista com saldo; criar, editar, arquivar, reativar e excluir (com aviso quando há lançamentos) | ✅ |
 | 5 | Categorias | Receitas e despesas, com cor e ícone; criar também de dentro do formulário de lançamento | ✅ |
-| 6 | Household | Membros e papéis, convites enviados (convidar, cancelar) e recebidos (aceitar, recusar, também como aviso no painel), sair, renomear, excluir e criar household | ✅ |
+| 6 | Espaço (household) | Membros e papéis, convites enviados (convidar, cancelar) e recebidos (aceitar, recusar, também como aviso no painel), sair, renomear, excluir e criar household | ✅ |
 | 7 | Perfil | Editar nome, tema e sair (página Perfil, também no menu do avatar) | ✅ |
 
 Legenda: 🎨 protótipo com dados fictícios · ✅ integrado à API · ⏳ pendente

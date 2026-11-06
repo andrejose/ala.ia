@@ -29,7 +29,7 @@ export function ProfileNameForm({ currentName }: { currentName: string }) {
           setSaved(false);
         }}
         error={fieldErrors(save.error).name}
-        hint="É como as pessoas dos seus households veem você."
+        hint="É como as pessoas dos seus espaços veem você."
         maxLength={100}
         required
       />

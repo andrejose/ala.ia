@@ -65,7 +65,9 @@ const router = createBrowserRouter([
               { path: "lancamentos", element: <TransactionsPage /> },
               { path: "contas", element: <AccountsPage /> },
               { path: "categorias", element: <CategoriesPage /> },
-              { path: "household", element: <HouseholdPage /> },
+              { path: "espaco", element: <HouseholdPage /> },
+              // Endereço antigo da tela, antes do nome "Espaço"
+              { path: "household", element: <Navigate to="/espaco" replace /> },
               { path: "mais", element: <MorePage /> },
               { path: "*", element: <Navigate to="/" replace /> },
             ],

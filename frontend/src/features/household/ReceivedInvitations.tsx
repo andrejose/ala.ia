@@ -11,7 +11,7 @@ import { useHousehold } from "./HouseholdProvider";
 const roleText = { owner: "como dono", member: "como membro" } as const;
 
 // Convites recebidos pelo usuário logado, com Aceitar e Recusar.
-// Aparece no painel e na tela de household; sem convites, não mostra nada.
+// Aparece no painel e na tela do espaço; sem convites, não mostra nada.
 export function ReceivedInvitations() {
   const { data } = useMyInvitations();
   const { selectHousehold } = useHousehold();
@@ -36,7 +36,7 @@ export function ReceivedInvitations() {
               {roleText[invitation.role]}.
             </p>
             <p className="mt-0.5 text-sm text-muted">
-              Ao aceitar, você passa a ver e lançar as finanças desse household. Vale até {formatDate(invitation.expires_at.slice(0, 10))}.
+              Ao aceitar, você passa a ver e lançar as finanças desse espaço. Vale até {formatDate(invitation.expires_at.slice(0, 10))}.
             </p>
           </div>
           <div className="flex gap-2">

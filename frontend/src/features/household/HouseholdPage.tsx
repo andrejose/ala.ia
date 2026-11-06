@@ -17,7 +17,7 @@ const roleLabel: Record<Role, string> = { owner: "Dono", member: "Membro" };
 // Mensagens da tela para os erros de regra mais comuns
 const overrides = {
   LAST_OWNER:
-    "O household precisa de pelo menos um dono. Promova outra pessoa a dono antes, ou exclua o household.",
+    "O espaço precisa de pelo menos um dono. Promova outra pessoa a dono antes, ou exclua o espaço.",
 };
 
 export function HouseholdPage() {
@@ -33,8 +33,8 @@ export function HouseholdPage() {
         title={household.name}
         description={
           isOwner
-            ? "Você é dono deste household: pode convidar pessoas, mudar papéis e excluí-lo."
-            : "Você é membro deste household: vê e lança as finanças dele."
+            ? "Você é dono deste espaço: pode convidar pessoas, mudar papéis e excluí-lo."
+            : "Você é membro deste espaço: vê e lança as finanças dele."
         }
       />
 
@@ -43,7 +43,7 @@ export function HouseholdPage() {
 
         {households.length > 1 && (
           <p className="text-sm text-muted">
-            Você participa de {households.length} households. Troque o que está em uso pelo seletor no painel.
+            Você participa de {households.length} espaços. Troque o que está em uso pelo seletor no painel.
           </p>
         )}
 
@@ -68,7 +68,7 @@ export function HouseholdPage() {
             )}
             <div className="flex items-center justify-between gap-4 px-4 py-4">
               <div>
-                <p className="font-semibold">Criar outro household</p>
+                <p className="font-semibold">Criar outro espaço</p>
                 <p className="text-sm text-muted">Para separar outro conjunto de finanças, como uma viagem ou um negócio.</p>
               </div>
               <Button variant="soft" className="h-10 shrink-0 text-sm" onClick={() => setSheet("new")}>
@@ -260,7 +260,7 @@ function LeaveRow() {
     <div className="px-4 py-4">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="font-semibold">Sair do household</p>
+          <p className="font-semibold">Sair do espaço</p>
           <p className="text-sm text-muted">Você deixa de ver as finanças dele. Para voltar, precisa de um novo convite.</p>
         </div>
         <Button
@@ -290,7 +290,7 @@ function DeleteRow() {
     <div className="px-4 py-4">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="font-semibold text-expense">Excluir household</p>
+          <p className="font-semibold text-expense">Excluir espaço</p>
           <p className="text-sm text-muted">
             Apaga de vez as contas, categorias e lançamentos dele, para todas as pessoas. Não dá para desfazer.
           </p>
