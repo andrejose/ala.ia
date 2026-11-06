@@ -42,8 +42,10 @@ Atualize o status de cada fase conforme avançarmos.
 | `23503` em **insert/update** – referência inválida (conta de outro household, categoria do tipo errado) | 400 | `INVALID_REFERENCE` |
 | `23514` / `23502` / `22P02` – check, not null, tipo inválido | 400 | `CONSTRAINT_VIOLATION` / `INVALID_INPUT` |
 | `P0001` – `raise exception` sem `errcode` | 400 | `BUSINESS_RULE` |
-| `P0002` – RPC não encontrou o dado (ex.: e-mail não cadastrado no convite) | 404 | `NOT_FOUND` |
+| `P0002` – RPC não encontrou o dado (ex.: convite inexistente ou de outra pessoa) | 404 | `NOT_FOUND` |
 | `AL001` – household ficaria sem dono (trigger `ensure_household_has_owner`) | 409 | `LAST_OWNER` |
+| `AL002` – convite expirado, já respondido ou cancelado | 410 | `INVITATION_UNAVAILABLE` |
+| `22023` – regra violada em RPC (ex.: convidar o próprio e-mail) | 400 | `BUSINESS_RULE` |
 | Limite de requisições do Supabase Auth | 429 | `RATE_LIMITED` |
 | Qualquer outro | 500 | `INTERNAL_ERROR` |
 
@@ -118,11 +120,25 @@ A validação Zod replica as regras do banco (transfer × categoria) para devolv
 | PATCH | `/households/:householdId` 🔒 | Só owner (`name`) |
 | DELETE | `/households/:householdId` 🔒 | Só owner; apaga tudo em cascata |
 | GET | `/households/:householdId/members` 🔒 | Com nome do perfil |
-| POST | `/households/:householdId/members` 🔒 | Só owner. RPC `invite_member` (`email`, `role`); 404 se o e-mail não tem cadastro, 409 se já é membro |
 | PATCH | `/households/:householdId/members/:userId` 🔒 | Só owner (`role`) |
 | DELETE | `/households/:householdId/members/:userId` 🔒 | Owner remove qualquer um; membro só pode sair (remover a si mesmo) |
 
 O único owner não pode sair nem se rebaixar (409 `LAST_OWNER`): primeiro promove outro membro a owner. Regra garantida no banco pelo trigger `ensure_household_has_owner`.
+
+#### Convites (estilo GitHub) ✅
+
+A pessoa só vira membro quando **aceita** o convite. O convite vale para o e-mail, mesmo sem cadastro (fica esperando a pessoa se cadastrar), e expira em 7 dias. Por isso a resposta do convite é a mesma para qualquer e-mail: a API não revela quem tem conta.
+
+| Método | Rota | Observações |
+| :--- | :--- | :--- |
+| GET | `/households/:householdId/invitations` 🔒 | Convites pendentes do household |
+| POST | `/households/:householdId/invitations` 🔒 | Só owner. `email`, `role`. 409 se já é membro ou já tem convite pendente; 400 para o próprio e-mail |
+| DELETE | `/households/:householdId/invitations/:invitationId` 🔒 | Só owner. Cancela um convite pendente |
+| GET | `/invitations` 🔒 | Convites recebidos pelo usuário logado, com o nome do household e de quem convidou |
+| POST | `/invitations/:invitationId/accept` 🔒 | Entra no household com o papel do convite. 410 se expirado, já respondido ou cancelado |
+| POST | `/invitations/:invitationId/decline` 🔒 | Recusa |
+
+> **Produção:** o aceite confia no e-mail da conta. Deixe a confirmação de e-mail ligada no Supabase Auth, para ninguém criar conta com o e-mail de outra pessoa e aceitar um convite que não era para ela.
 
 ### Fase 6 — Relatórios ✅
 
@@ -146,11 +162,15 @@ Feitos na migration `household_owner_guard_and_reports`:
 - ✅ Funções de relatório.
 - ✅ O trigger `on_auth_user_created` passou a ser declarado em `07_functions.sql`; sem isso, o `supabase db schema declarative sync` gerava um `DROP TRIGGER`.
 
+Feitos na migration `invitations_and_default_categories`:
+
+- ✅ Convites com aceite (tabela `household_invitations` e funções `invite_member`, `my_invitations`, `accept_invitation`, `decline_invitation`, `cancel_invitation`). O convite não revela mais se um e-mail tem cadastro; convidar como `owner` passou a ser aceitável, porque a pessoa precisa aceitar.
+- ✅ Categorias padrão no cadastro: Salário (receita), Mercado, Transporte e Lazer (despesas).
+
 Ainda pendentes (decisão da equipe):
 
-1. `invite_member`: hoje permite convidar direto como `owner`, adiciona sem aceite do convidado e revela se um e-mail tem cadastro (qualquer usuário é owner do household pessoal).
-2. `transactions.user_id`: a API sempre grava o usuário logado, mas o banco ainda aceita outro valor se alguém usar o Supabase direto. Um trigger resolveria.
-3. Decidir `is_active` em `categories` e categorias padrão no `handle_new_user`.
+1. `transactions.user_id`: a API sempre grava o usuário logado, mas o banco ainda aceita outro valor se alguém usar o Supabase direto. Um trigger resolveria.
+2. Decidir `is_active` em `categories`.
 
 ## Definição de pronto (por endpoint)
 
