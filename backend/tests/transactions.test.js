@@ -15,8 +15,8 @@ beforeAll(async () => {
   bruno = await createTestUser({ name: "Bruno Lançamentos" });
   checking = await createAccount(carla, { name: "Corrente", initial_balance: 1000 });
   savings = await createAccount(carla, { name: "Poupança", type: "savings", initial_balance: 0 });
-  salary = await createCategory(carla, { name: "Salário", type: "income" });
-  groceries = await createCategory(carla, { name: "Mercado", type: "expense" });
+  salary = await createCategory(carla, { name: "Renda", type: "income" });
+  groceries = await createCategory(carla, { name: "Feira", type: "expense" });
 });
 
 describe("Lançamentos — criação e regras", () => {

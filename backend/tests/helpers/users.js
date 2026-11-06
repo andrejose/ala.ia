@@ -64,3 +64,16 @@ export async function createTransaction(user, body, householdBase = user.base) {
   if (res.status !== 201) throw new Error(`createTransaction: ${res.status} ${JSON.stringify(res.body)}`);
   return res.body;
 }
+
+// O dono convida e a pessoa aceita: depois disso ela é membro do household
+export async function inviteAndAccept(owner, member, householdBase, role = "member") {
+  const invite = await request(app)
+    .post(`${householdBase}/invitations`)
+    .set(owner.authHeader)
+    .send({ email: member.email, role });
+  if (invite.status !== 201) throw new Error(`inviteAndAccept (convite): ${invite.status} ${JSON.stringify(invite.body)}`);
+
+  const accept = await request(app).post(`/invitations/${invite.body.id}/accept`).set(member.authHeader);
+  if (accept.status !== 200) throw new Error(`inviteAndAccept (aceite): ${accept.status} ${JSON.stringify(accept.body)}`);
+  return invite.body;
+}

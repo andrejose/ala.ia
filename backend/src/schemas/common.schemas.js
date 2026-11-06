@@ -22,6 +22,7 @@ export const money = z
 export const householdParams = z.object({ householdId: uuid });
 export const idParams = z.object({ id: uuid });
 export const userIdParams = z.object({ userId: uuid });
+export const invitationIdParams = z.object({ invitationId: uuid });
 
 // Query string chega como texto: "true"/"false" -> boolean
 export const booleanQuery = z.enum(["true", "false"]).transform((value) => value === "true");

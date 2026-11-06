@@ -10,7 +10,7 @@ export const openApiSpec = {
   openapi: "3.1.0",
   info: {
     title: "Ala.ia API",
-    version: "0.2.0",
+    version: "0.3.0",
     description:
       "API REST de controle financeiro pessoal.\n\n" +
       "**Como testar:** faça `POST /auth/signup` ou `POST /auth/login`, copie o `session.access_token` " +
@@ -23,6 +23,7 @@ export const openApiSpec = {
     { name: "Perfil", description: "Dados do usuário logado" },
     { name: "Households", description: "Grupos que compartilham as finanças (ex.: um casal)" },
     { name: "Membros", description: "Quem tem acesso a cada household" },
+    { name: "Convites", description: "Convidar, aceitar e recusar a entrada em um household" },
     { name: "Contas", description: "Contas do household, com saldo calculado" },
     { name: "Categorias", description: "Categorias de receitas e despesas" },
     { name: "Lançamentos", description: "Receitas, despesas e transferências" },

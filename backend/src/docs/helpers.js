@@ -44,6 +44,7 @@ const pathParam = (name, description) => ({
 export const householdIdParam = pathParam("householdId", "Id do household (veja GET /me ou GET /households)");
 export const idParam = (resource) => pathParam("id", `Id ${resource}`);
 export const userIdParam = pathParam("userId", "Id do usuário membro");
+export const invitationIdParam = pathParam("invitationId", "Id do convite");
 
 // Converte um schema Zod de query string em parâmetros OpenAPI
 export function queryParams(zodSchema) {
