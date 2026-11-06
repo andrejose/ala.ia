@@ -53,6 +53,12 @@ export function fromPostgrestError(error) {
     case "AL001": // trigger ensure_household_has_owner
       return new HttpError(409, "LAST_OWNER", error.message);
 
+    case "AL002": // convite expirado ou já respondido
+      return new HttpError(410, "INVITATION_UNAVAILABLE", error.message);
+
+    case "22023": // invalid_parameter_value, ex.: convidar o próprio e-mail
+      return new HttpError(400, "BUSINESS_RULE", error.message);
+
     case "PGRST301":
     case "PGRST303":
       return new HttpError(401, "INVALID_TOKEN", "Token inválido ou expirado.");

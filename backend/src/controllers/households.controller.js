@@ -86,32 +86,6 @@ export async function listMembers(req, res) {
   res.status(200).json(data.map(toMemberDto));
 }
 
-async function getMember(supabase, householdId, userId) {
-  const { data, error } = await supabase
-    .from("household_members")
-    .select(memberColumns)
-    .eq("household_id", householdId)
-    .eq("user_id", userId)
-    .single();
-  if (error) throw error;
-
-  return toMemberDto(data);
-}
-
-// POST /households/:householdId/members (owner) — adiciona um usuário já cadastrado
-export async function addMember(req, res) {
-  const { email, role } = req.validated.body;
-
-  const { data: userId, error } = await req.supabase.rpc("invite_member", {
-    p_household_id: req.household.id,
-    p_email: email,
-    p_role: role,
-  });
-  if (error) throw error;
-
-  res.status(201).json(await getMember(req.supabase, req.household.id, userId));
-}
-
 // PATCH /households/:householdId/members/:userId (owner)
 export async function updateMember(req, res) {
   const { userId } = req.validated.params;

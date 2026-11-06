@@ -1,7 +1,7 @@
 import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 import { app } from "../src/app.js";
-import { createAccount, createTestUser, uniqueEmail } from "./helpers/users.js";
+import { createAccount, createTestUser, inviteAndAccept } from "./helpers/users.js";
 
 let owner;
 let member;
@@ -17,7 +17,7 @@ beforeAll(async () => {
 async function sharedHousehold(name = "Casa") {
   const created = await request(app).post("/households").set(owner.authHeader).send({ name });
   const base = `/households/${created.body.id}`;
-  await request(app).post(`${base}/members`).set(owner.authHeader).send({ email: member.email });
+  await inviteAndAccept(owner, member, base);
   return { id: created.body.id, base };
 }
 
@@ -73,17 +73,12 @@ describe("Households", () => {
 });
 
 describe("Membros", () => {
-  it("dono convida por e-mail; o membro passa a ver os dados do household", async () => {
+  it("depois de aceitar o convite, o membro vê os dados do household", async () => {
     const created = await request(app).post("/households").set(owner.authHeader).send({ name: "Compartilhada" });
     const base = `/households/${created.body.id}`;
     const account = await createAccount(owner, { name: "Conjunta" }, base);
 
-    const invite = await request(app)
-      .post(`${base}/members`)
-      .set(owner.authHeader)
-      .send({ email: member.email.toUpperCase() });
-    expect(invite.status).toBe(201);
-    expect(invite.body).toMatchObject({ user_id: member.id, name: "Membro da Casa", role: "member" });
+    await inviteAndAccept(owner, member, base);
 
     const members = await request(app).get(`${base}/members`).set(member.authHeader);
     expect(members.status).toBe(200);
@@ -94,19 +89,6 @@ describe("Membros", () => {
 
     const me = await request(app).get("/me").set(member.authHeader);
     expect(me.body.households).toContainEqual(expect.objectContaining({ id: created.body.id, role: "member" }));
-  });
-
-  it("recusa convite duplicado (409), e-mail inexistente (404) e convite feito por membro (403)", async () => {
-    const { base } = await sharedHousehold();
-
-    const duplicate = await request(app).post(`${base}/members`).set(owner.authHeader).send({ email: member.email });
-    expect(duplicate.status).toBe(409);
-
-    const unknown = await request(app).post(`${base}/members`).set(owner.authHeader).send({ email: uniqueEmail("ninguem") });
-    expect(unknown.status).toBe(404);
-
-    const byMember = await request(app).post(`${base}/members`).set(member.authHeader).send({ email: outsider.email });
-    expect(byMember.status).toBe(403);
   });
 
   it("membro sai do household; não pode remover outros (403)", async () => {

@@ -110,6 +110,36 @@ export const components = {
       },
     },
 
+    Invitation: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        household_id: { type: "string", format: "uuid" },
+        email: { type: "string", format: "email", example: "joao@example.com" },
+        role: { type: "string", enum: ["owner", "member"] },
+        status: { type: "string", enum: ["pending", "accepted", "declined", "canceled"] },
+        created_at: { type: "string", format: "date-time" },
+        expires_at: { type: "string", format: "date-time", description: "7 dias depois do convite." },
+        invited_by: {
+          type: ["object", "null"],
+          properties: { user_id: { type: "string", format: "uuid" }, name: { type: ["string", "null"] } },
+        },
+      },
+    },
+
+    MyInvitation: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        household_id: { type: "string", format: "uuid" },
+        household_name: { type: "string", example: "Casa (Maria e João)" },
+        role: { type: "string", enum: ["owner", "member"] },
+        invited_by_name: { type: ["string", "null"], example: "Maria Silva" },
+        created_at: { type: "string", format: "date-time" },
+        expires_at: { type: "string", format: "date-time" },
+      },
+    },
+
     Account: {
       type: "object",
       properties: {

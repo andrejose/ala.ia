@@ -6,6 +6,7 @@ import {
 } from "../../schemas/households.schemas.js";
 import {
   badRequest,
+  invitationIdParam,
   error,
   forbiddenOwner,
   householdIdParam,
@@ -19,7 +20,10 @@ import {
 } from "../helpers.js";
 
 const tags = ["Households"];
+const invitationTags = ["Convites"];
 const memberTags = ["Membros"];
+const invitationGone = error("Convite expirado, já respondido ou cancelado.", "INVITATION_UNAVAILABLE", "Este convite expirou. Peça um novo para quem convidou.");
+
 const lastOwner = error(
   "O household ficaria sem dono.",
   "LAST_OWNER",
@@ -87,20 +91,6 @@ export const householdPaths = {
         404: notFound,
       },
     },
-    post: {
-      tags: memberTags,
-      summary: "Adiciona um membro pelo e-mail (dono)",
-      description: "O usuário convidado precisa já ter cadastro.",
-      requestBody: jsonBody(inviteMemberSchema),
-      responses: {
-        201: json("Membro adicionado.", ref("Member")),
-        400: badRequest,
-        401: unauthorized,
-        403: forbiddenOwner,
-        404: error("Household não encontrado ou nenhum usuário com esse e-mail.", "NOT_FOUND", "Nenhum usuário cadastrado com o email informado."),
-        409: error("O usuário já é membro.", "CONFLICT", "Este usuário já é membro do household."),
-      },
-    },
   },
 
   "/households/{householdId}/members/{userId}": {
@@ -128,6 +118,85 @@ export const householdPaths = {
         403: error("Membro tentando remover outra pessoa.", "FORBIDDEN", "Apenas o dono pode remover outros membros."),
         404: notFound,
         409: lastOwner,
+      },
+    },
+  },
+
+  "/households/{householdId}/invitations": {
+    parameters: [householdIdParam],
+    get: {
+      tags: invitationTags,
+      summary: "Lista os convites pendentes do household",
+      responses: {
+        200: json("Convites pendentes e ainda válidos.", { type: "array", items: ref("Invitation") }),
+        401: unauthorized,
+        404: notFound,
+      },
+    },
+    post: {
+      tags: invitationTags,
+      summary: "Convida alguém por e-mail (dono)",
+      description:
+        "Cria um convite pendente, que vale por 7 dias. A pessoa só vira membro quando aceitar em " +
+        "`POST /invitations/{invitationId}/accept`. O e-mail não precisa ter cadastro: o convite espera a " +
+        "pessoa se cadastrar com ele, e a resposta é a mesma nos dois casos.",
+      requestBody: jsonBody(inviteMemberSchema),
+      responses: {
+        201: json("Convite criado.", ref("Invitation")),
+        400: error("E-mail inválido ou o próprio e-mail.", "BUSINESS_RULE", "Você já faz parte deste household."),
+        401: unauthorized,
+        403: forbiddenOwner,
+        404: notFound,
+        409: error("A pessoa já é membro ou já tem convite pendente.", "CONFLICT", "Já existe um convite pendente para este e-mail."),
+      },
+    },
+  },
+
+  "/households/{householdId}/invitations/{invitationId}": {
+    parameters: [householdIdParam, invitationIdParam],
+    delete: {
+      tags: invitationTags,
+      summary: "Cancela um convite pendente (dono)",
+      responses: { 204: noContent("Convite cancelado."), 401: unauthorized, 403: forbiddenOwner, 404: notFound },
+    },
+  },
+
+  "/invitations": {
+    get: {
+      tags: invitationTags,
+      summary: "Convites recebidos",
+      description: "Convites pendentes para o e-mail do usuário logado.",
+      responses: {
+        200: json("Convites pendentes.", { type: "array", items: ref("MyInvitation") }),
+        401: unauthorized,
+      },
+    },
+  },
+
+  "/invitations/{invitationId}/accept": {
+    parameters: [invitationIdParam],
+    post: {
+      tags: invitationTags,
+      summary: "Aceita um convite",
+      responses: {
+        200: json("Entrou no household.", ref("Household")),
+        401: unauthorized,
+        404: error("Convite inexistente ou que não é para você.", "NOT_FOUND", "Convite não encontrado."),
+        410: invitationGone,
+      },
+    },
+  },
+
+  "/invitations/{invitationId}/decline": {
+    parameters: [invitationIdParam],
+    post: {
+      tags: invitationTags,
+      summary: "Recusa um convite",
+      responses: {
+        204: noContent("Convite recusado."),
+        401: unauthorized,
+        404: error("Convite inexistente ou que não é para você.", "NOT_FOUND", "Convite não encontrado."),
+        410: invitationGone,
       },
     },
   },

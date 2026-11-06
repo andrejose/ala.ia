@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Ellipsis, LayoutDashboard, Plus, Tags, Wallet, type LucideIcon } from "lucide-react";
+import { ArrowLeftRight, Ellipsis, LayoutDashboard, Plus, Tags, UserRound, Users, Wallet, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 import { useTransactionSheet } from "../features/transactions/TransactionSheet";
@@ -17,8 +17,11 @@ const mainNav: NavItem[] = [
   { to: "/contas", label: "Contas", icon: Wallet },
 ];
 
-// Household e membros entram aqui quando a tela existir (fase 5)
-const moreNav: NavItem[] = [{ to: "/categorias", label: "Categorias", icon: Tags }];
+const moreNav: NavItem[] = [
+  { to: "/categorias", label: "Categorias", icon: Tags },
+  { to: "/espaco", label: "Espaço", icon: Users },
+  { to: "/mais", label: "Perfil", icon: UserRound },
+];
 
 // Estrutura das telas logadas:
 //   celular    -> conteúdo + barra inferior com botão "+" no centro

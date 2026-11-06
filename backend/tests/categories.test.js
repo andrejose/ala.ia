@@ -11,16 +11,32 @@ beforeAll(async () => {
   pedro = await createTestUser({ name: "Pedro Categorias" });
 });
 
+describe("Categorias padrão", () => {
+  it("todo cadastro já começa com Salário, Mercado, Transporte e Lazer", async () => {
+    const user = await createTestUser({ name: "Novata" });
+    const res = await request(app).get(`${user.base}/categories`).set(user.authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.map((c) => [c.name, c.type]).sort()).toEqual([
+      ["Lazer", "expense"],
+      ["Mercado", "expense"],
+      ["Salário", "income"],
+      ["Transporte", "expense"],
+    ]);
+    expect(res.body.every((c) => c.color && c.icon)).toBe(true);
+  });
+});
+
 describe("Categorias — CRUD", () => {
   it("cria, lista com filtro, edita e exclui", async () => {
     const create = await request(app)
       .post(`${ana.base}/categories`)
       .set(ana.authHeader)
-      .send({ name: "Salário", type: "income", color: "#00AA55", icon: "wallet" });
+      .send({ name: "Freela", type: "income", color: "#00AA55", icon: "wallet" });
     expect(create.status).toBe(201);
-    expect(create.body).toMatchObject({ name: "Salário", type: "income", color: "#00AA55", icon: "wallet" });
+    expect(create.body).toMatchObject({ name: "Freela", type: "income", color: "#00AA55", icon: "wallet" });
 
-    const expense = await createCategory(ana, { name: "Mercado", type: "expense" });
+    const expense = await createCategory(ana, { name: "Padaria", type: "expense" });
 
     const incomes = await request(app).get(`${ana.base}/categories?type=income`).set(ana.authHeader);
     expect(incomes.status).toBe(200);

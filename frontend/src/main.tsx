@@ -16,6 +16,7 @@ import { AuthProvider } from "./features/auth/AuthProvider";
 import { RedirectIfAuthenticated, RequireAuth } from "./features/auth/guards";
 import { LoginPage } from "./features/auth/LoginPage";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
+import { HouseholdPage } from "./features/household/HouseholdPage";
 import { HouseholdProvider } from "./features/household/HouseholdProvider";
 import { ApiError } from "./lib/api";
 
@@ -64,6 +65,9 @@ const router = createBrowserRouter([
               { path: "lancamentos", element: <TransactionsPage /> },
               { path: "contas", element: <AccountsPage /> },
               { path: "categorias", element: <CategoriesPage /> },
+              { path: "espaco", element: <HouseholdPage /> },
+              // Endereço antigo da tela, antes do nome "Espaço"
+              { path: "household", element: <Navigate to="/espaco" replace /> },
               { path: "mais", element: <MorePage /> },
               { path: "*", element: <Navigate to="/" replace /> },
             ],

@@ -11,6 +11,7 @@ Documento vivo do frontend do Ala.ia. O frontend não é o objetivo da disciplin
 | Local | Pasta `frontend/`, ao lado de `backend/` |
 | Dispositivo | Celular primeiro, funcionando bem no computador |
 | Idioma e formatos | Português do Brasil; valores em R$ (`1.234,56`); datas `dd/mm/aaaa` |
+| Nome do "household" | Na interface, **Espaço** (tela em `/espaco`). Código, banco e API continuam com `household`; as mensagens de erro da API são ajustadas em `src/lib/api.ts` antes de aparecer na tela |
 | Visual | Humano e acolhedor; tema claro e escuro (segue o sistema, com alternância manual) |
 | Sessão | `access_token` em memória; `refresh_token` no `localStorage`; renovação automática ao expirar |
 | Comunicação com a API | Proxy do Vite em desenvolvimento (`/api` → `http://localhost:3001`), sem CORS. Para publicar, adicionar CORS no backend |
@@ -49,8 +50,8 @@ interface, com algarismos tabulares nos valores).
 | 3 | Lançamentos | Lista por mês e por dia, com filtros (tipo, situação, conta); formulário de receita, despesa e transferência no botão +; marcar como pago; editar e excluir | ✅ |
 | 4 | Contas | Lista com saldo; criar, editar, arquivar, reativar e excluir (com aviso quando há lançamentos) | ✅ |
 | 5 | Categorias | Receitas e despesas, com cor e ícone; criar também de dentro do formulário de lançamento | ✅ |
-| 6 | Household | Trocar de household, membros e convite por e-mail | ⏳ |
-| 7 | Perfil | Nome, tema e sair | 🟡 tema e sair na página Mais; editar nome pendente |
+| 6 | Espaço (household) | Membros e papéis, convites enviados (convidar, cancelar) e recebidos (aceitar, recusar, também como aviso no painel), sair, renomear, excluir e criar household | ✅ |
+| 7 | Perfil | Editar nome, tema e sair (página Perfil, também no menu do avatar) | ✅ |
 
 Legenda: 🎨 protótipo com dados fictícios · ✅ integrado à API · ⏳ pendente
 
@@ -60,7 +61,7 @@ Legenda: 🎨 protótipo com dados fictícios · ✅ integrado à API · ⏳ pen
 2. **Autenticação** — cliente da API, sessão com renovação automática, rotas protegidas, login e cadastro reais. ✅
 3. **Painel e lançamentos** — ✅ painel com dados reais; tela de lançamentos, formulário no botão + e filtros.
 4. **Contas e categorias.** ✅
-5. **Households, membros e perfil.**
+5. **Households, membros, convites e perfil.** ✅
 6. **Acabamento** — estados vazios, carregamento e erro; acessibilidade; README.
 
 ## Navegação
@@ -77,4 +78,4 @@ Legenda: 🎨 protótipo com dados fictícios · ✅ integrado à API · ⏳ pen
 
 ## Notas de design
 
-A skill frontend-design apontou que fundo creme + serifa nos títulos + acento argila/damasco é hoje um visual comum em interfaces geradas, assim como cartões todos iguais com a mesma sombra. O visual aprovado foi mantido; uma revisão para dar mais personalidade (por exemplo, trocar o damasco por outro acento e variar a hierarquia dos blocos do painel) fica como proposta para a equipe decidir.
+A skill frontend-design apontou que fundo creme + serifa nos títulos + acento argila/damasco é hoje um visual comum em interfaces geradas. Em 06/11/2026 foi testada uma variação "caderneta" (papel frio, tinta de caneta azul, saldo com marca-texto, margem vermelha, pendentes "a lápis", Schibsted Grotesk). A variação foi recusada e descartada: **o visual atual é o oficial**, e as telas novas seguem os tokens de `src/index.css`.

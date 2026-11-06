@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as accounts from "../controllers/accounts.controller.js";
 import * as categories from "../controllers/categories.controller.js";
 import * as households from "../controllers/households.controller.js";
+import * as invitations from "../controllers/invitations.controller.js";
 import * as reports from "../controllers/reports.controller.js";
 import * as transactions from "../controllers/transactions.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
@@ -9,7 +10,7 @@ import { loadHousehold, requireOwner } from "../middlewares/household.js";
 import { validate } from "../middlewares/validate.js";
 import { createAccountSchema, listAccountsQuery, updateAccountSchema } from "../schemas/accounts.schemas.js";
 import { createCategorySchema, listCategoriesQuery, updateCategorySchema } from "../schemas/categories.schemas.js";
-import { householdParams, idParams, userIdParams } from "../schemas/common.schemas.js";
+import { householdParams, idParams, invitationIdParams, userIdParams } from "../schemas/common.schemas.js";
 import {
   createHouseholdSchema,
   inviteMemberSchema,
@@ -42,7 +43,6 @@ household.delete("/", requireOwner, households.remove);
 
 // Membros
 household.get("/members", households.listMembers);
-household.post("/members", requireOwner, validate({ body: inviteMemberSchema }), households.addMember);
 household.patch(
   "/members/:userId",
   requireOwner,
@@ -50,6 +50,16 @@ household.patch(
   households.updateMember
 );
 household.delete("/members/:userId", validate({ params: userIdParams }), households.removeMember);
+
+// Convites (a pessoa só vira membro quando aceita: ver /invitations)
+household.get("/invitations", invitations.listForHousehold);
+household.post("/invitations", requireOwner, validate({ body: inviteMemberSchema }), invitations.create);
+household.delete(
+  "/invitations/:invitationId",
+  requireOwner,
+  validate({ params: invitationIdParams }),
+  invitations.cancel
+);
 
 // Contas
 household.get("/accounts", validate({ query: listAccountsQuery }), accounts.list);

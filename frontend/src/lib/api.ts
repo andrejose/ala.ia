@@ -12,13 +12,24 @@ import type { ApiErrorBody, AuthResponse, Session } from "./types";
 const BASE_URL = "/api";
 const REFRESH_KEY = "ala.refresh_token";
 
+// Na interface, "household" se chama "espaço". A API e o banco continuam usando
+// "household"; as mensagens que chegam de lá são ajustadas aqui antes de
+// aparecer na tela. As duas palavras são masculinas, então a frase continua certa.
+function toUiTerms(message: string): string {
+  return message
+    .replace(/\bHouseholds\b/g, "Espaços")
+    .replace(/\bhouseholds\b/g, "espaços")
+    .replace(/\bHousehold\b/g, "Espaço")
+    .replace(/\bhousehold\b/g, "espaço");
+}
+
 export class ApiError extends Error {
   status: number;
   code: string;
   fieldErrors: Record<string, string>;
 
   constructor(status: number, body: ApiErrorBody | null) {
-    super(body?.error.message ?? "Não foi possível falar com o servidor. Verifique se a API está rodando.");
+    super(toUiTerms(body?.error.message ?? "Não foi possível falar com o servidor. Verifique se a API está rodando."));
     this.name = "ApiError";
     this.status = status;
     this.code = body?.error.code ?? "NETWORK_ERROR";
@@ -28,7 +39,7 @@ export class ApiError extends Error {
     const details = body?.error.details;
     if (Array.isArray(details)) {
       for (const d of details) {
-        if (d.path && !this.fieldErrors[d.path]) this.fieldErrors[d.path] = d.message;
+        if (d.path && !this.fieldErrors[d.path]) this.fieldErrors[d.path] = toUiTerms(d.message);
       }
     }
   }

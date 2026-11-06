@@ -57,19 +57,20 @@ backend/
 
 ## Banco de dados
 
-Todos os dados financeiros pertencem a um **household** (grupo compartilhado). Ao se cadastrar, o usuário ganha automaticamente um perfil e um household pessoal, do qual é dono.
+Todos os dados financeiros pertencem a um **household** (grupo compartilhado). Ao se cadastrar, o usuário ganha automaticamente um perfil, um household pessoal (do qual é dono) e as categorias Salário, Mercado, Transporte e Lazer. Para compartilhar, o dono convida por e-mail e a pessoa precisa aceitar o convite.
 
 | Tabela / View       | Descrição                                                      |
 | :------------------ | :------------------------------------------------------------- |
 | `profiles`          | Dados públicos do usuário (1:1 com `auth.users`)               |
 | `households`        | Grupo que agrupa contas, categorias e transações               |
 | `household_members` | Usuários de cada household e seu papel (`owner` / `member`)    |
+| `household_invitations` | Convites para entrar em um household (pendente, aceito, recusado, cancelado) |
 | `accounts`          | Contas do household e saldo inicial                            |
 | `categories`        | Categorias de receita e despesa                                |
 | `transactions`      | Receitas, despesas e transferências                            |
 | `account_balances`  | View com o saldo atual de cada conta (só transações pagas)     |
 
-Funções RPC: `create_household(p_name)`, `invite_member(p_household_id, p_email, p_role)`, `report_monthly_summary(p_household_id, p_month)` e `report_by_category(p_household_id, p_month, p_type)`.
+Funções RPC: `create_household(p_name)`, convites (`invite_member`, `my_invitations`, `accept_invitation`, `decline_invitation`, `cancel_invitation`) e relatórios (`report_monthly_summary`, `report_by_category`).
 
 Regra garantida no banco: todo household tem pelo menos um dono (trigger `ensure_household_has_owner`).
 

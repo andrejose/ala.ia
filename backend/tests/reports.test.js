@@ -12,7 +12,7 @@ beforeAll(async () => {
 
   const checking = await createAccount(user, { name: "Corrente", initial_balance: 0 });
   const savings = await createAccount(user, { name: "Poupança" });
-  const salary = await createCategory(user, { name: "Salário", type: "income", color: "#00AA55" });
+  const salary = await createCategory(user, { name: "Renda", type: "income", color: "#00AA55" });
   const rent = await createCategory(user, { name: "Aluguel", type: "expense" });
   const food = await createCategory(user, { name: "Alimentação", type: "expense" });
 
@@ -84,7 +84,7 @@ describe("GET /reports/by-category", () => {
       .set(user.authHeader);
 
     expect(res.body.categories).toEqual([
-      expect.objectContaining({ name: "Salário", color: "#00AA55", total: 5300, transaction_count: 2 }),
+      expect.objectContaining({ name: "Renda", color: "#00AA55", total: 5300, transaction_count: 2 }),
     ]);
   });
 });
