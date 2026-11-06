@@ -28,7 +28,18 @@ Controle de gastos de forma simples e eficiente, com:
 
 ```
 backend/
-├── index.js                 # Servidor Express
+├── src/
+│   ├── server.js            # Sobe o servidor (listen)
+│   ├── app.js               # App Express (rotas, Swagger, erros)
+│   ├── config/              # Leitura e validação do .env
+│   ├── lib/                 # Clientes Supabase e configuração do Zod
+│   ├── routes/              # Definição das rotas
+│   ├── controllers/         # Lógica de cada endpoint
+│   ├── schemas/             # Validação (Zod) — também gera o Swagger
+│   ├── middlewares/         # Autenticação, validação, erros
+│   ├── errors/              # HttpError e tradução dos erros do Supabase
+│   └── docs/                # Especificação OpenAPI
+├── tests/                   # Testes de integração (Vitest + supertest)
 ├── package.json
 └── supabase/
     ├── config.toml          # Configuração do Supabase CLI
@@ -61,21 +72,41 @@ Funções RPC: `create_household(p_name)` e `invite_member(p_household_id, p_ema
 
 ## Como executar
 
-Pré-requisitos: Node.js, Docker (para o Supabase local).
+Pré-requisitos: Node.js 20+, Docker (para o Supabase local).
 
 ```bash
 cd backend
 npm install
 npx supabase start      # sobe o Supabase local
 npx supabase db reset   # aplica as migrations
-node index.js
+cp .env.example .env    # preencha com API_URL e PUBLISHABLE_KEY de `npx supabase status`
+npm run dev             # servidor com reload em http://localhost:3001
 ```
 
-Crie o arquivo `backend/.env` com:
+| Script          | Descrição                                     |
+| :-------------- | :-------------------------------------------- |
+| `npm start`     | Sobe o servidor                               |
+| `npm run dev`   | Sobe o servidor e reinicia a cada alteração   |
+| `npm test`      | Roda os testes uma vez                        |
+| `npm run test:watch` | Roda os testes em modo observação        |
 
-```
-SUPABASE_URL=
-SUPABASE_PUBLISHABLE_KEY=
+## Documentação da API (Swagger)
+
+Com o servidor no ar, acesse **http://localhost:3001/docs**. A especificação OpenAPI fica em `/docs.json`.
+
+Para testar rotas protegidas: faça `POST /auth/signup` ou `POST /auth/login`, copie o `session.access_token` e clique em **Authorize**.
+
+O roteiro dos endpoints, as convenções e o mapeamento de erros estão em [docs/roteiro-backend.md](docs/roteiro-backend.md).
+
+## Testes
+
+Os testes de integração rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+
+```bash
+cd backend
+npx supabase start
+cp .env.test.example .env.test   # preencha o PUBLISHABLE_KEY de `npx supabase status`
+npm test
 ```
 
 ## Equipe
@@ -86,4 +117,4 @@ SUPABASE_PUBLISHABLE_KEY=
 
 ## Status
 
-🚧 Etapa inicial — schema do banco criado no Supabase; endpoints da API em desenvolvimento.
+🚧 Schema do banco criado; autenticação, perfil e Swagger prontos. Próximos passos em [docs/roteiro-backend.md](docs/roteiro-backend.md).
