@@ -10,7 +10,7 @@ export const openApiSpec = {
   openapi: "3.1.0",
   info: {
     title: "Ala.ia API",
-    version: "0.3.0",
+    version: "1.0.0",
     description:
       "API REST de controle financeiro pessoal.\n\n" +
       "**Como testar:** faça `POST /auth/signup` ou `POST /auth/login`, copie o `session.access_token` " +
