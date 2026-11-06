@@ -14,6 +14,16 @@ export function useHouseholdMutation<TVariables, TResult = unknown>(
   });
 }
 
+// Mutação que muda os households do próprio usuário (entrar, sair, criar,
+// excluir, renomear): recarrega tudo, inclusive /me e o seletor de household.
+export function useAccountMutation<TVariables, TResult = unknown>(mutationFn: (variables: TVariables) => Promise<TResult>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
 // Mensagem para mostrar no formulário a partir de um erro da API
 export function errorMessage(error: unknown, overrides: Record<string, string> = {}): string | null {
   if (!error) return null;

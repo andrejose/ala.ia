@@ -21,6 +21,7 @@ import {
 import type { Account, Category, ReportSummary, Transaction } from "../../lib/types";
 import { accountTypes } from "../accounts/accountTypes";
 import { useHousehold } from "../household/HouseholdProvider";
+import { ReceivedInvitations } from "../household/ReceivedInvitations";
 import { TransactionRow } from "../transactions/TransactionRow";
 import { useTransactionSheet } from "../transactions/TransactionSheet";
 
@@ -33,6 +34,7 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <Header />
+      <ReceivedInvitations />
       {/* minmax(0, ...) impede que o carrossel de contas estique a coluna */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-6">

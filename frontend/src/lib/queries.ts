@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { api } from "./api";
-import type { Account, Category, Me, ReportByCategory, ReportSummary, TransactionList } from "./types";
+import type { Account, Category, Invitation, Me, Member, MyInvitation, ReportByCategory, ReportSummary, TransactionList } from "./types";
 
 // Consultas à API com cache (TanStack Query). As chaves começam pelo
 // household, para a troca de household recarregar tudo dele.
@@ -77,4 +77,25 @@ export function useSpendingByCategory(householdId: string | undefined, month = c
       api.get<ReportByCategory>(`/households/${householdId}/reports/by-category`, { month, type: "expense" }),
     enabled: !!householdId,
   });
+}
+
+export function useMembers(householdId: string | undefined) {
+  return useQuery({
+    queryKey: ["households", householdId, "members"],
+    queryFn: () => api.get<Member[]>(`/households/${householdId}/members`),
+    enabled: !!householdId,
+  });
+}
+
+export function useHouseholdInvitations(householdId: string | undefined) {
+  return useQuery({
+    queryKey: ["households", householdId, "invitations"],
+    queryFn: () => api.get<Invitation[]>(`/households/${householdId}/invitations`),
+    enabled: !!householdId,
+  });
+}
+
+// Convites recebidos pelo usuário logado
+export function useMyInvitations() {
+  return useQuery({ queryKey: ["invitations"], queryFn: () => api.get<MyInvitation[]>("/invitations") });
 }

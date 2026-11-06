@@ -116,3 +116,33 @@ export interface ApiErrorBody {
     details?: Array<{ in?: string; path: string; message: string }> | Record<string, unknown>;
   };
 }
+
+export interface Member {
+  user_id: string;
+  name: string | null;
+  role: Role;
+  joined_at: string;
+}
+
+// Convite visto pelo household (GET /households/:id/invitations)
+export interface Invitation {
+  id: string;
+  household_id: string;
+  email: string;
+  role: Role;
+  status: "pending" | "accepted" | "declined" | "canceled";
+  created_at: string;
+  expires_at: string;
+  invited_by: { user_id: string; name: string | null } | null;
+}
+
+// Convite recebido pelo usuário logado (GET /invitations)
+export interface MyInvitation {
+  id: string;
+  household_id: string;
+  household_name: string;
+  role: Role;
+  invited_by_name: string | null;
+  created_at: string;
+  expires_at: string;
+}

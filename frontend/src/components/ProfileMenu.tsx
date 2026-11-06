@@ -1,4 +1,5 @@
-import { LogOut } from "lucide-react";
+import { LogOut, UserRound, Users } from "lucide-react";
+import { Link } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../features/auth/AuthProvider";
 
@@ -42,6 +43,24 @@ export function ProfileMenu({ name, email }: { name: string; email: string }) {
             <p className="truncate font-bold">{name}</p>
             <p className="truncate text-sm text-muted">{email}</p>
           </div>
+          <Link
+            role="menuitem"
+            to="/mais"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 font-semibold text-muted transition hover:bg-surface-2 hover:text-ink"
+          >
+            <UserRound className="size-4" aria-hidden="true" />
+            Perfil
+          </Link>
+          <Link
+            role="menuitem"
+            to="/household"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 font-semibold text-muted transition hover:bg-surface-2 hover:text-ink"
+          >
+            <Users className="size-4" aria-hidden="true" />
+            Household e convites
+          </Link>
           <button
             role="menuitem"
             type="button"
