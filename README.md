@@ -18,6 +18,7 @@ Controle de gastos de forma simples e eficiente, com:
 
 | Área         | Tecnologia                                         |
 | :----------- | :------------------------------------------------- |
+| Frontend     | React + Vite + TypeScript + Tailwind CSS           |
 | Backend      | Node.js + Express                                  |
 | Database     | Supabase (PostgreSQL 17) com Row Level Security    |
 | Autenticação | Supabase Auth                                      |
@@ -27,6 +28,13 @@ Controle de gastos de forma simples e eficiente, com:
 ## Estrutura
 
 ```
+frontend/                    # Interface web (React + Vite + TypeScript + Tailwind)
+├── src/
+│   ├── components/          # Componentes visuais (logo, navegação, valores...)
+│   ├── features/            # Telas: auth, dashboard, household
+│   └── lib/                 # Cliente da API, consultas, formatação e tema
+└── vite.config.ts           # Proxy /api -> backend em desenvolvimento
+
 backend/
 ├── src/
 │   ├── server.js            # Sobe o servidor (listen)
@@ -91,6 +99,20 @@ npm run dev             # servidor com reload em http://localhost:3001
 | `npm run dev`   | Sobe o servidor e reinicia a cada alteração   |
 | `npm test`      | Roda os testes uma vez                        |
 | `npm run test:watch` | Roda os testes em modo observação        |
+
+## Frontend
+
+Com o backend rodando em `http://localhost:3001`:
+
+```bash
+cd frontend
+npm install
+npm run dev             # http://localhost:5173
+```
+
+O Vite repassa as chamadas de `/api` para o backend, então não é preciso configurar CORS em desenvolvimento. Para usar outra porta da API: `API_TARGET=http://localhost:3101 npm run dev`.
+
+Roteiro, decisões e identidade visual em [docs/roteiro-frontend.md](docs/roteiro-frontend.md).
 
 ## Documentação da API (Swagger)
 

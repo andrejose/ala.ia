@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   Tokens de design do Ala.ia
+   Cores definidas como variáveis CSS e trocadas por tema. As classes do
+   Tailwind (bg-surface, text-ink, ...) apontam para as variáveis, então os
+   componentes não precisam de "dark:" — o tema muda só aqui.
+   ============================================================================= */
+
+:root {
+  color-scheme: light;
+
+  --bg: #faf6f0;           /* papel creme */
+  --surface: #ffffff;
+  --surface-2: #f3ede4;    /* áreas recuadas, trilhos de barra */
+  --ink: #2b2622;          /* texto principal, quase-preto quente */
+  --muted: #6e655c;        /* texto secundário */
+  --line: #e6ddd1;         /* bordas e divisórias */
+
+  --primary: #2f6b5e;      /* verde-sálvia */
+  --primary-ink: #faf6f0;  /* texto sobre a cor principal */
+  --primary-soft: #dfece6;
+  --accent: #e08a5b;       /* damasco: destaques e a asa do logo */
+  --accent-soft: #fbe6d8;
+
+  --income: #2f7d5b;
+  --income-soft: #e1f0e7;
+  --expense: #b4513a;      /* argila */
+  --expense-soft: #f8e3dc;
+  --pending: #9a7420;      /* ocre */
+  --pending-soft: #f6ecd2;
+
+  --shadow: 0 1px 2px rgb(43 38 34 / 0.04), 0 8px 24px -12px rgb(43 38 34 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #161412;
+    --surface: #201d1a;
+    --surface-2: #2a2622;
+    --ink: #f2ede6;
+    --muted: #aaa196;
+    --line: #36302a;
+    --primary: #86c3b2;
+    --primary-ink: #13231f;
+    --primary-soft: #23352f;
+    --accent: #f0a57c;
+    --accent-soft: #3a2a20;
+    --income: #73c99d;
+    --income-soft: #1f3329;
+    --expense: #ec9077;
+    --expense-soft: #3b241d;
+    --pending: #e2b95b;
+    --pending-soft: #362c17;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #161412;
+  --surface: #201d1a;
+  --surface-2: #2a2622;
+  --ink: #f2ede6;
+  --muted: #aaa196;
+  --line: #36302a;
+  --primary: #86c3b2;
+  --primary-ink: #13231f;
+  --primary-soft: #23352f;
+  --accent: #f0a57c;
+  --accent-soft: #3a2a20;
+  --income: #73c99d;
+  --income-soft: #1f3329;
+  --expense: #ec9077;
+  --expense-soft: #3b241d;
+  --pending: #e2b95b;
+  --pending-soft: #362c17;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-income: var(--income);
+  --color-income-soft: var(--income-soft);
+  --color-expense: var(--expense);
+  --color-expense-soft: var(--expense-soft);
+  --color-pending: var(--pending);
+  --color-pending-soft: var(--pending-soft);
+
+  --font-display: "Fraunces Variable", Georgia, serif;
+  --font-sans: "Nunito Sans Variable", system-ui, sans-serif;
+
+  --radius-card: 1.25rem;
+  --shadow-card: var(--shadow);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    min-height: 100dvh;
+  }
+
+  /* Valores monetários alinham melhor com algarismos de mesma largura */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

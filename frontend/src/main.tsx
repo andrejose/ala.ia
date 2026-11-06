@@ -1,0 +1,73 @@
+import "@fontsource-variable/fraunces";
+import "@fontsource-variable/nunito-sans";
+import "./index.css";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
+import { AppShell } from "./components/AppShell";
+import { AuthProvider } from "./features/auth/AuthProvider";
+import { RedirectIfAuthenticated, RequireAuth } from "./features/auth/guards";
+import { LoginPage } from "./features/auth/LoginPage";
+import { DashboardPage } from "./features/dashboard/DashboardPage";
+import { HouseholdProvider } from "./features/household/HouseholdProvider";
+import { ApiError } from "./lib/api";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      // Não insiste em erros do cliente (404, 403...); tenta de novo só falhas de rede/servidor
+      retry: (count, error) => count < 2 && !(error instanceof ApiError && error.status >= 400 && error.status < 500),
+    },
+  },
+});
+
+function Root() {
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  );
+}
+
+function LoggedIn() {
+  return (
+    <HouseholdProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </HouseholdProvider>
+  );
+}
+
+const router = createBrowserRouter([
+  {
+    element: <Root />,
+    children: [
+      { element: <RedirectIfAuthenticated />, children: [{ path: "/entrar", element: <LoginPage /> }] },
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            element: <LoggedIn />,
+            children: [
+              { index: true, element: <DashboardPage /> },
+              // Telas das próximas fases: por enquanto voltam para o painel
+              { path: "*", element: <DashboardPage /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+]);
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  </StrictMode>
+);
