@@ -66,6 +66,36 @@ create trigger transactions_set_updated_at
   for each row execute function public.set_updated_at();
 
 -- -----------------------------------------------------------------------------
+-- Autor do lançamento (user_id): sempre quem está logado.
+--   * INSERT: ignora o user_id enviado e grava auth.uid(). Sem usuário logado
+--     (ex.: service role em scripts), mantém o valor informado.
+--   * UPDATE: o autor não pode ser trocado por outro usuário. Virar null é
+--     permitido, porque é o que a FK faz quando o perfil do autor é excluído
+--     (on delete set null).
+-- A API já faz isso; o trigger garante o mesmo para quem usar o Supabase direto.
+-- -----------------------------------------------------------------------------
+create or replace function public.set_transaction_author()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if tg_op = 'INSERT' then
+    if (select auth.uid()) is not null then
+      new.user_id := (select auth.uid());
+    end if;
+  elsif new.user_id is not null and new.user_id is distinct from old.user_id then
+    new.user_id := old.user_id;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger transactions_set_author
+  before insert or update on public.transactions
+  for each row execute function public.set_transaction_author();
+
+-- -----------------------------------------------------------------------------
 -- RLS
 -- -----------------------------------------------------------------------------
 alter table public.transactions enable row level security;
