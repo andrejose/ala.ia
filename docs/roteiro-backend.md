@@ -19,7 +19,8 @@ Atualize o status de cada fase conforme avançarmos.
 - Rotas de dados ficam aninhadas no household: `/households/:householdId/<recurso>`.
 - JSON em `snake_case`, igual às colunas do banco.
 - Valores monetários como número com 2 casas (`amount: 150.5`); datas como `YYYY-MM-DD`.
-- Listagens aceitam `limit` (padrão 50, máx. 100) e `offset`.
+- A listagem de lançamentos é paginada (`limit`, padrão 50, máx. 100, e `offset`) e devolve `{ data, pagination: { total, limit, offset } }`. Contas, categorias, households e membros são listas curtas e voltam como array simples.
+- Rotas de um household respondem **404** se o usuário não for membro (sem revelar que o household existe) e **403** quando a operação é exclusiva do dono.
 - Formato único de erro:
 
 ```json
@@ -40,7 +41,9 @@ Atualize o status de cada fase conforme avançarmos.
 | `23503` em **delete** – registro em uso (ex.: conta com lançamentos) | 409 | `RESOURCE_IN_USE` |
 | `23503` em **insert/update** – referência inválida (conta de outro household, categoria do tipo errado) | 400 | `INVALID_REFERENCE` |
 | `23514` / `23502` / `22P02` – check, not null, tipo inválido | 400 | `CONSTRAINT_VIOLATION` / `INVALID_INPUT` |
-| `P0001` – `raise exception` das RPCs | 400 | `BUSINESS_RULE` (até as funções ganharem `errcode` próprios) |
+| `P0001` – `raise exception` sem `errcode` | 400 | `BUSINESS_RULE` |
+| `P0002` – RPC não encontrou o dado (ex.: e-mail não cadastrado no convite) | 404 | `NOT_FOUND` |
+| `AL001` – household ficaria sem dono (trigger `ensure_household_has_owner`) | 409 | `LAST_OWNER` |
 | Limite de requisições do Supabase Auth | 429 | `RATE_LIMITED` |
 | Qualquer outro | 500 | `INTERNAL_ERROR` |
 
@@ -73,7 +76,7 @@ Estrutura em `src/` (routes, controllers, middlewares, schemas, docs), scripts `
 
 O cadastro dispara o trigger `handle_new_user`, que cria o perfil e o household pessoal.
 
-### Fase 2 — Contas ⏳
+### Fase 2 — Contas ✅
 
 | Método | Rota | Observações |
 | :--- | :--- | :--- |
@@ -83,7 +86,7 @@ O cadastro dispara o trigger `handle_new_user`, que cria o perfil e o household 
 | PATCH | `/households/:householdId/accounts/:id` 🔒 | `name`, `type`, `initial_balance`, `is_active` (arquivar) |
 | DELETE | `/households/:householdId/accounts/:id` 🔒 | 409 `RESOURCE_IN_USE` se houver lançamentos, sugerindo arquivar |
 
-### Fase 3 — Categorias ⏳
+### Fase 3 — Categorias ✅
 
 | Método | Rota | Observações |
 | :--- | :--- | :--- |
@@ -93,7 +96,7 @@ O cadastro dispara o trigger `handle_new_user`, que cria o perfil e o household 
 | PATCH | `/households/:householdId/categories/:id` 🔒 | Trocar `type` de categoria em uso → 409 |
 | DELETE | `/households/:householdId/categories/:id` 🔒 | 409 se houver lançamentos |
 
-### Fase 4 — Lançamentos ⏳
+### Fase 4 — Lançamentos ✅
 
 | Método | Rota | Observações |
 | :--- | :--- | :--- |
@@ -105,42 +108,49 @@ O cadastro dispara o trigger `handle_new_user`, que cria o perfil e o household 
 
 A validação Zod replica as regras do banco (transfer × categoria) para devolver mensagens claras antes de chegar ao Postgres.
 
-### Fase 5 — Households e membros ⏳
+### Fase 5 — Households e membros ✅
 
 | Método | Rota | Observações |
 | :--- | :--- | :--- |
 | GET | `/households` 🔒 | Households do usuário com o papel |
-| POST | `/households` 🔒 | RPC `create_household` |
-| GET | `/households/:id` 🔒 | |
-| PATCH | `/households/:id` 🔒 | Só owner (`name`) |
-| DELETE | `/households/:id` 🔒 | Só owner; apaga tudo em cascata |
-| GET | `/households/:id/members` 🔒 | Com nome do perfil |
-| POST | `/households/:id/members` 🔒 | RPC `invite_member` (`email`, `role`) |
-| PATCH | `/households/:id/members/:userId` 🔒 | Só owner (`role`) |
-| DELETE | `/households/:id/members/:userId` 🔒 | Owner remove; membro sai |
+| POST | `/households` 🔒 | RPC `create_household`; o usuário vira owner |
+| GET | `/households/:householdId` 🔒 | Inclui o papel do usuário |
+| PATCH | `/households/:householdId` 🔒 | Só owner (`name`) |
+| DELETE | `/households/:householdId` 🔒 | Só owner; apaga tudo em cascata |
+| GET | `/households/:householdId/members` 🔒 | Com nome do perfil |
+| POST | `/households/:householdId/members` 🔒 | Só owner. RPC `invite_member` (`email`, `role`); 404 se o e-mail não tem cadastro, 409 se já é membro |
+| PATCH | `/households/:householdId/members/:userId` 🔒 | Só owner (`role`) |
+| DELETE | `/households/:householdId/members/:userId` 🔒 | Owner remove qualquer um; membro só pode sair (remover a si mesmo) |
 
-Depende dos ajustes de banco abaixo (único owner, convite).
+O único owner não pode sair nem se rebaixar (409 `LAST_OWNER`): primeiro promove outro membro a owner. Regra garantida no banco pelo trigger `ensure_household_has_owner`.
 
-### Fase 6 — Relatórios ⏳
+### Fase 6 — Relatórios ✅
 
 | Método | Rota | Observações |
 | :--- | :--- | :--- |
 | GET | `/households/:householdId/reports/summary?month=YYYY-MM` 🔒 | Total de receitas, despesas e resultado do mês (pagos e pendentes separados) |
 | GET | `/households/:householdId/reports/by-category?month=YYYY-MM&type=expense` 🔒 | Total por categoria |
 
-Preferência: implementar como views (`security_invoker`) ou RPCs no banco.
+Implementados como funções `report_monthly_summary` e `report_by_category` (`security invoker`, em `08_reports.sql`), então o RLS continua valendo. O mês é o do vencimento (`due_date`) e transferências não entram. Sem `month`, usa o mês atual.
 
 ### Fase 7 — Fechamento ⏳
 
 README final, revisão do Swagger, testes de RLS entre usuários, deploy.
 
-## Ajustes pendentes no banco (Database)
+## Ajustes no banco (Database)
 
-1. Impedir que o household fique sem owner: o único owner não pode sair nem se rebaixar; o último membro não pode sair (ou o household é excluído).
-2. `invite_member`: não permitir convidar direto como `owner`; avaliar fluxo de aceite; não revelar se um e-mail existe.
-3. `transactions.user_id`: forçar `auth.uid()` no insert (trigger ou check).
-4. `errcode` próprios nas exceções das RPCs, para a API mapear 403/404.
-5. Decidir `is_active` em `categories` e categorias padrão no `handle_new_user`.
+Feitos na migration `household_owner_guard_and_reports`:
+
+- ✅ Household nunca fica sem owner (trigger `ensure_household_has_owner`, erro `AL001`). Exclusões em cascata continuam permitidas.
+- ✅ `invite_member` com `errcode` próprios (`42501`, `P0002`, `23505`), retornando o id do usuário adicionado e acusando quem já é membro.
+- ✅ Funções de relatório.
+- ✅ O trigger `on_auth_user_created` passou a ser declarado em `07_functions.sql`; sem isso, o `supabase db schema declarative sync` gerava um `DROP TRIGGER`.
+
+Ainda pendentes (decisão da equipe):
+
+1. `invite_member`: hoje permite convidar direto como `owner`, adiciona sem aceite do convidado e revela se um e-mail tem cadastro (qualquer usuário é owner do household pessoal).
+2. `transactions.user_id`: a API sempre grava o usuário logado, mas o banco ainda aceita outro valor se alguém usar o Supabase direto. Um trigger resolveria.
+3. Decidir `is_active` em `categories` e categorias padrão no `handle_new_user`.
 
 ## Definição de pronto (por endpoint)
 
