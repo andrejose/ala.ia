@@ -149,9 +149,15 @@ A pessoa só vira membro quando **aceita** o convite. O convite vale para o e-ma
 
 Implementados como funções `report_monthly_summary` e `report_by_category` (`security invoker`, em `08_reports.sql`), então o RLS continua valendo. O mês é o do vencimento (`due_date`) e transferências não entram. Sem `month`, usa o mês atual.
 
-### Fase 7 — Fechamento ⏳
+### Fase 7 — Fechamento ✅
 
-README final, revisão do Swagger, testes de RLS entre usuários, deploy.
+Versão 1.0, entrega da disciplina:
+
+- README final, com visão geral, arquitetura, resumo da API e limitações conhecidas.
+- Swagger revisado (versão 1.0.0) e um teste (`tests/docs-coverage.test.js`) que falha se alguma rota da API não estiver documentada ou se o Swagger documentar rota que não existe.
+- Testes de RLS entre usuários em todos os recursos, mais testes das regras do banco acessado direto pelo Supabase, sem a API (`tests/db-rules.test.js`).
+- CI no GitHub Actions e `main` protegida.
+- Deploy: fora do escopo da versão 1.0 (o projeto roda localmente); ver `docs/melhorias-futuras.md`.
 
 ## Ajustes no banco (Database)
 
@@ -167,10 +173,11 @@ Feitos na migration `invitations_and_default_categories`:
 - ✅ Convites com aceite (tabela `household_invitations` e funções `invite_member`, `my_invitations`, `accept_invitation`, `decline_invitation`, `cancel_invitation`). O convite não revela mais se um e-mail tem cadastro; convidar como `owner` passou a ser aceitável, porque a pessoa precisa aceitar.
 - ✅ Categorias padrão no cadastro: Salário (receita), Mercado, Transporte e Lazer (despesas).
 
-Ainda pendentes (decisão da equipe):
+Feito na migration `transaction_author_guard`:
 
-1. `transactions.user_id`: a API sempre grava o usuário logado, mas o banco ainda aceita outro valor se alguém usar o Supabase direto. Um trigger resolveria.
-2. Decidir `is_active` em `categories`.
+- ✅ `transactions.user_id` é sempre o usuário logado (trigger `set_transaction_author`), também para quem usar o Supabase direto. O autor não pode ser trocado depois; só vira `null` quando o perfil é excluído.
+
+Para depois da versão 1.0: arquivar categorias (`is_active`), registrado em `docs/melhorias-futuras.md`.
 
 ## Definição de pronto (por endpoint)
 

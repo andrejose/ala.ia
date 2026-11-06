@@ -7,7 +7,7 @@ Documento vivo do frontend do Ala.ia. O frontend não é o objetivo da disciplin
 
 | Tema | Decisão |
 | :--- | :--- |
-| Stack | React + Vite + TypeScript, Tailwind CSS, TanStack Query (dados), React Router (rotas), Recharts (gráficos), Lucide (ícones) |
+| Stack | React + Vite + TypeScript, Tailwind CSS, TanStack Query (dados), React Router (rotas), Lucide (ícones) |
 | Local | Pasta `frontend/`, ao lado de `backend/` |
 | Dispositivo | Celular primeiro, funcionando bem no computador |
 | Idioma e formatos | Português do Brasil; valores em R$ (`1.234,56`); datas `dd/mm/aaaa` |
@@ -62,7 +62,7 @@ Legenda: 🎨 protótipo com dados fictícios · ✅ integrado à API · ⏳ pen
 3. **Painel e lançamentos** — ✅ painel com dados reais; tela de lançamentos, formulário no botão + e filtros.
 4. **Contas e categorias.** ✅
 5. **Households, membros, convites e perfil.** ✅
-6. **Acabamento** — estados vazios, carregamento e erro; acessibilidade; README.
+6. **Acabamento** ✅ — estados vazios, carregamento e erro em todas as telas; README final. Testes do frontend, tela de relatórios e outras ideias ficaram em `docs/melhorias-futuras.md`.
 
 ## Navegação
 
