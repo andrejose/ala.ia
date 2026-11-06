@@ -5,7 +5,9 @@
 
 -- -----------------------------------------------------------------------------
 -- Cadastro: ao criar um usuário no Supabase Auth, cria o perfil, um household
--- pessoal e torna o usuário dono (owner) desse household.
+-- pessoal, torna o usuário dono (owner) desse household e cria categorias
+-- iniciais (Salário, Mercado, Transporte e Lazer), para o primeiro lançamento
+-- não depender de configurar nada.
 --
 -- O nome vem dos metadados do signUp:
 --   supabase.auth.signUp({ email, password, options: { data: { name } } })
@@ -37,6 +39,14 @@ begin
 
   insert into public.household_members (household_id, user_id, role)
   values (v_household_id, new.id, 'owner');
+
+  -- Cores e ícones seguem a paleta e os nomes de ícone do frontend
+  insert into public.categories (household_id, name, type, color, icon)
+  values
+    (v_household_id, 'Salário',    'income',  '#2F7D5B', 'briefcase'),
+    (v_household_id, 'Mercado',    'expense', '#E08A5B', 'shopping-basket'),
+    (v_household_id, 'Transporte', 'expense', '#3E8DA8', 'bus'),
+    (v_household_id, 'Lazer',      'expense', '#7A6FA8', 'popcorn');
 
   return new;
 end;
@@ -75,55 +85,4 @@ begin
 end;
 $$;
 
--- -----------------------------------------------------------------------------
--- Compartilha um household com outro usuário já cadastrado, pelo email.
--- Apenas o dono do household pode convidar. Retorna o id do usuário adicionado.
--- Uso: supabase.rpc('invite_member', { p_household_id, p_email, p_role })
---
--- Erros (SQLSTATE), traduzidos pela API:
---   42501 -> quem chamou não é dono do household (403)
---   P0002 -> nenhum usuário com esse email (404)
---   23505 -> o usuário já é membro do household (409)
--- -----------------------------------------------------------------------------
-create or replace function public.invite_member(
-  p_household_id uuid,
-  p_email        varchar,
-  p_role         public.member_role default 'member'
-)
-returns uuid
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_invited_id uuid;
-begin
-  if not public.is_household_owner(p_household_id) then
-    raise exception 'Apenas o dono do household pode convidar membros.'
-      using errcode = '42501';
-  end if;
-
-  select id into v_invited_id
-  from auth.users
-  where lower(email) = lower(trim(p_email));
-
-  if v_invited_id is null then
-    raise exception 'Nenhum usuário cadastrado com o email informado.'
-      using errcode = 'P0002';
-  end if;
-
-  if exists (
-    select 1 from public.household_members
-    where household_id = p_household_id and user_id = v_invited_id
-  ) then
-    raise exception 'Este usuário já é membro do household.'
-      using errcode = '23505';
-  end if;
-
-  insert into public.household_members (household_id, user_id, role)
-  values (p_household_id, v_invited_id, p_role);
-
-  return v_invited_id;
-end;
-$$;
 
