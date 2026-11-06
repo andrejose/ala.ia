@@ -1,11 +1,15 @@
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, ChevronDown, ChevronRight, PiggyBank, TrendingUp, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronRight } from "lucide-react";
+import { Link } from "react-router";
 import type { ReactNode } from "react";
 import { CategoryIcon } from "../../components/CategoryIcon";
 import { Money } from "../../components/Money";
 import { ProfileMenu } from "../../components/ProfileMenu";
 import { ThemeToggle } from "../../components/ThemeToggle";
-import { Badge, Button, Card, SectionTitle } from "../../components/ui";
-import { firstName, formatMonth, formatShortDate, greeting, monthName } from "../../lib/format";
+import { Button, Card, SectionTitle } from "../../components/ui";
+import { api } from "../../lib/api";
+import { today } from "../../lib/money";
+import { useHouseholdMutation } from "../../lib/mutations";
+import { firstName, formatMonth, greeting, monthName } from "../../lib/format";
 import {
   currentMonth,
   useAccounts,
@@ -14,8 +18,11 @@ import {
   useRecentTransactions,
   useSpendingByCategory,
 } from "../../lib/queries";
-import type { Account, Category, ReportSummary } from "../../lib/types";
+import type { Account, Category, ReportSummary, Transaction } from "../../lib/types";
+import { accountTypes } from "../accounts/accountTypes";
 import { useHousehold } from "../household/HouseholdProvider";
+import { TransactionRow } from "../transactions/TransactionRow";
+import { useTransactionSheet } from "../transactions/TransactionSheet";
 
 export function DashboardPage() {
   const { me, household, isLoading, error } = useHousehold();
@@ -279,20 +286,13 @@ function SpendingByCategory({ householdId }: { householdId: string }) {
 // ---------------------------------------------------------------------------
 // Contas
 // ---------------------------------------------------------------------------
-const accountIcon: Record<Account["type"], typeof Wallet> = {
-  checking: Wallet,
-  savings: PiggyBank,
-  investment: TrendingUp,
-  cash: Wallet,
-};
-
 function AccountsList({ householdId }: { householdId: string }) {
   const { data, isLoading } = useAccounts(householdId);
   const accounts = (data ?? []).filter((a) => a.is_active);
 
   return (
     <section aria-labelledby="accounts-title">
-      <SectionTitle>
+      <SectionTitle action={accounts.length > 0 ? <LinkMore to="/contas">Todas</LinkMore> : undefined}>
         <span id="accounts-title">Suas contas</span>
       </SectionTitle>
 
@@ -304,13 +304,16 @@ function AccountsList({ householdId }: { householdId: string }) {
           <p className="mt-1 text-sm text-muted">
             Comece pela conta do banco ou pela carteira: o saldo de cada uma aparece aqui.
           </p>
+          <Link to="/contas" className="mt-3 inline-flex text-sm font-bold text-primary hover:underline">
+            Cadastrar conta
+          </Link>
         </Card>
       )}
 
       {accounts.length > 0 && (
         <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 lg:flex-col lg:overflow-visible">
           {accounts.map((account) => {
-            const Icon = accountIcon[account.type];
+            const Icon = accountTypes[account.type].icon;
             return (
               <Card key={account.id} className="min-w-[180px] snap-start p-4 lg:flex lg:items-center lg:gap-3">
                 <span className="grid size-10 place-items-center rounded-2xl bg-primary-soft text-primary">
@@ -338,6 +341,10 @@ function RecentTransactions({ householdId }: { householdId: string }) {
   const transactions = useRecentTransactions(householdId);
   const categories = useCategories(householdId);
   const accounts = useAccounts(householdId);
+  const sheet = useTransactionSheet();
+  const markPaid = useHouseholdMutation(householdId, (tx: Transaction) =>
+    api.patch(`/households/${householdId}/transactions/${tx.id}`, { payment_date: today() })
+  );
 
   const categoryById = new Map<string, Category>((categories.data ?? []).map((c) => [c.id, c]));
   const accountById = new Map<string, Account>((accounts.data ?? []).map((a) => [a.id, a]));
@@ -345,7 +352,7 @@ function RecentTransactions({ householdId }: { householdId: string }) {
 
   return (
     <section aria-labelledby="recent-title">
-      <SectionTitle action={items.length > 0 ? <LinkMore>Ver todos</LinkMore> : undefined}>
+      <SectionTitle action={items.length > 0 ? <LinkMore to="/lancamentos">Ver todos</LinkMore> : undefined}>
         <span id="recent-title">Últimos lançamentos</span>
       </SectionTitle>
 
@@ -358,46 +365,24 @@ function RecentTransactions({ householdId }: { householdId: string }) {
           ))}
 
         {transactions.data && items.length === 0 && (
-          <p className="px-4 py-5 text-sm text-muted">
-            Nenhum lançamento ainda. Use o botão + para registrar a primeira receita ou despesa.
-          </p>
+          <div className="px-4 py-5">
+            <p className="text-sm text-muted">Nenhum lançamento ainda. Registre a primeira receita ou despesa.</p>
+            <Button variant="soft" className="mt-3 h-10 text-sm" onClick={() => sheet.openNew()}>
+              Novo lançamento
+            </Button>
+          </div>
         )}
 
-        {items.map((tx) => {
-          const category = tx.category_id ? categoryById.get(tx.category_id) : undefined;
-          const isTransfer = tx.type === "transfer";
-          const subtitle = isTransfer
-            ? `${accountById.get(tx.account_id)?.name ?? "Conta"} para ${accountById.get(tx.destination_account_id ?? "")?.name ?? "outra conta"}`
-            : category?.name;
-
-          return (
-            <div key={tx.id} className="flex items-center gap-3 px-4 py-3.5">
-              {isTransfer ? (
-                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-surface-2 text-muted" aria-hidden="true">
-                  <ArrowLeftRight className="size-5" />
-                </span>
-              ) : (
-                <CategoryIcon icon={category?.icon ?? null} color={category?.color ?? null} />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{tx.description}</p>
-                <p className="truncate text-sm text-muted">{subtitle}</p>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                <Money
-                  value={tx.amount}
-                  tone={tx.type === "income" ? "income" : tx.type === "expense" ? "expense" : "neutral"}
-                  className="font-bold"
-                />
-                {tx.payment_date ? (
-                  <span className="text-xs text-muted">{formatShortDate(tx.due_date)}</span>
-                ) : (
-                  <Badge tone="pending">Vence {formatShortDate(tx.due_date)}</Badge>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {items.map((tx) => (
+          <TransactionRow
+            key={tx.id}
+            transaction={tx}
+            category={tx.category_id ? categoryById.get(tx.category_id) : undefined}
+            accountById={accountById}
+            onOpen={() => sheet.openEdit(tx)}
+            onMarkPaid={() => markPaid.mutate(tx)}
+          />
+        ))}
       </Card>
     </section>
   );
@@ -406,12 +391,12 @@ function RecentTransactions({ householdId }: { householdId: string }) {
 // ---------------------------------------------------------------------------
 // Auxiliares
 // ---------------------------------------------------------------------------
-function LinkMore({ children }: { children: ReactNode }) {
+function LinkMore({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <a href="/lancamentos" className="inline-flex items-center text-sm font-bold text-primary hover:underline">
+    <Link to={to} className="inline-flex items-center text-sm font-bold text-primary hover:underline">
       {children}
       <ChevronRight className="size-4" aria-hidden="true" />
-    </a>
+    </Link>
   );
 }
 

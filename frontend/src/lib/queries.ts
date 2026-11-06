@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { api } from "./api";
 import type { Account, Category, Me, ReportByCategory, ReportSummary, TransactionList } from "./types";
 
@@ -33,6 +33,31 @@ export function useRecentTransactions(householdId: string | undefined, limit = 6
   return useQuery({
     queryKey: ["households", householdId, "transactions", { limit }],
     queryFn: () => api.get<TransactionList>(`/households/${householdId}/transactions`, { limit }),
+    enabled: !!householdId,
+  });
+}
+
+export interface TransactionFilters {
+  from?: string;
+  to?: string;
+  type?: "income" | "expense" | "transfer";
+  status?: "paid" | "pending";
+  account_id?: string;
+}
+
+const PAGE_SIZE = 30;
+
+// Lista paginada ("carregar mais") com os filtros da API
+export function useTransactions(householdId: string | undefined, filters: TransactionFilters) {
+  return useInfiniteQuery({
+    queryKey: ["households", householdId, "transactions", "list", filters],
+    queryFn: ({ pageParam }) =>
+      api.get<TransactionList>(`/households/${householdId}/transactions`, { ...filters, limit: PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (last) => {
+      const next = last.pagination.offset + last.pagination.limit;
+      return next < last.pagination.total ? next : undefined;
+    },
     enabled: !!householdId,
   });
 }
