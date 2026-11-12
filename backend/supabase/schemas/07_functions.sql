@@ -5,7 +5,8 @@
 
 -- -----------------------------------------------------------------------------
 -- Cadastro: ao criar um usuário no Supabase Auth, cria o perfil, um household
--- pessoal, torna o usuário dono (owner) desse household e cria categorias
+-- pessoal chamado "Pessoal" (a pessoa pode renomear depois), torna o usuário
+-- dono (owner) desse household e cria categorias
 -- iniciais (Salário, Mercado, Transporte e Lazer), para o primeiro lançamento
 -- não depender de configurar nada.
 --
@@ -34,7 +35,7 @@ begin
   values (new.id, v_name);
 
   insert into public.households (name)
-  values ('Finanças de ' || v_name)
+  values ('Pessoal')
   returning id into v_household_id;
 
   insert into public.household_members (household_id, user_id, role)

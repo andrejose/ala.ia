@@ -69,6 +69,9 @@ function CategoryForm({
   const save = useHouseholdMutation(householdId, (input: CategoryInput) =>
     category ? api.patch<Category>(`${base}/${category.id}`, input) : api.post<Category>(base, input)
   );
+  const archive = useHouseholdMutation(householdId, (is_active: boolean) =>
+    api.patch<Category>(`${base}/${category!.id}`, { is_active })
+  );
   const remove = useHouseholdMutation(householdId, () => api.delete(`${base}/${category!.id}`));
 
   const errors = fieldErrors(save.error);
@@ -77,8 +80,10 @@ function CategoryForm({
       CONFLICT: `Já existe uma categoria de ${type === "income" ? "receita" : "despesa"} com esse nome.`,
       RESOURCE_IN_USE: "Esta categoria já tem lançamentos, então não pode mudar de tipo.",
     }) ??
+    errorMessage(archive.error) ??
     errorMessage(remove.error, {
-      RESOURCE_IN_USE: "Esta categoria tem lançamentos, então não pode ser excluída. Mude os lançamentos de categoria antes.",
+      RESOURCE_IN_USE:
+        "Esta categoria tem lançamentos, então não pode ser excluída. Arquive para tirá-la das listas sem perder o histórico.",
     });
 
   function handleSubmit(event: FormEvent) {
@@ -94,7 +99,7 @@ function CategoryForm({
     );
   }
 
-  const busy = save.isPending || remove.isPending;
+  const busy = save.isPending || archive.isPending || remove.isPending;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -177,7 +182,15 @@ function CategoryForm({
       </Button>
 
       {category && (
-        <div className="flex justify-end border-t border-line pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => archive.mutate(!category.is_active, { onSuccess: onDone })}
+          >
+            {category.is_active ? "Arquivar categoria" : "Reativar categoria"}
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -185,7 +198,7 @@ function CategoryForm({
             className={confirmDelete ? "text-expense hover:text-expense" : ""}
             onClick={() => (confirmDelete ? remove.mutate(undefined, { onSuccess: onDone }) : setConfirmDelete(true))}
           >
-            {confirmDelete ? "Confirmar exclusão" : "Excluir categoria"}
+            {confirmDelete ? "Confirmar exclusão" : "Excluir"}
           </Button>
         </div>
       )}

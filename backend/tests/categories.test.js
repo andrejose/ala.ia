@@ -24,6 +24,7 @@ describe("Categorias padrão", () => {
       ["Transporte", "expense"],
     ]);
     expect(res.body.every((c) => c.color && c.icon)).toBe(true);
+    expect(res.body.every((c) => c.is_active === true)).toBe(true);
   });
 });
 
@@ -56,6 +57,55 @@ describe("Categorias — CRUD", () => {
 
     const get = await request(app).get(`${ana.base}/categories/${expense.id}`).set(ana.authHeader);
     expect(get.status).toBe(404);
+  });
+
+  it("arquiva e reativa uma categoria, sem perder os lançamentos", async () => {
+    const account = await createAccount(ana);
+    const category = await createCategory(ana, { name: "Academia", type: "expense" });
+    const transaction = await createTransaction(ana, {
+      type: "expense",
+      description: "Mensalidade",
+      amount: 120,
+      account_id: account.id,
+      category_id: category.id,
+    });
+
+    const archive = await request(app)
+      .patch(`${ana.base}/categories/${category.id}`)
+      .set(ana.authHeader)
+      .send({ is_active: false });
+    expect(archive.status).toBe(200);
+    expect(archive.body).toMatchObject({ name: "Academia", is_active: false });
+
+    const active = await request(app).get(`${ana.base}/categories?is_active=true`).set(ana.authHeader);
+    expect(active.body.map((c) => c.id)).not.toContain(category.id);
+
+    const archived = await request(app).get(`${ana.base}/categories?is_active=false`).set(ana.authHeader);
+    expect(archived.body.map((c) => c.id)).toEqual([category.id]);
+
+    // Sem filtro, a lista traz todas (o frontend precisa das arquivadas para o histórico)
+    const all = await request(app).get(`${ana.base}/categories`).set(ana.authHeader);
+    expect(all.body.map((c) => c.id)).toContain(category.id);
+
+    const tx = await request(app).get(`${ana.base}/transactions/${transaction.id}`).set(ana.authHeader);
+    expect(tx.body.category_id).toBe(category.id);
+
+    const reactivate = await request(app)
+      .patch(`${ana.base}/categories/${category.id}`)
+      .set(ana.authHeader)
+      .send({ is_active: true });
+    expect(reactivate.body.is_active).toBe(true);
+  });
+
+  it("recusa is_active que não seja booleano (400)", async () => {
+    const category = await createCategory(ana, { name: "Feira", type: "expense" });
+    const res = await request(app)
+      .patch(`${ana.base}/categories/${category.id}`)
+      .set(ana.authHeader)
+      .send({ is_active: "não" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("VALIDATION_ERROR");
   });
 
   it("recusa categoria duplicada (mesmo nome e tipo) com 409", async () => {
@@ -93,6 +143,7 @@ describe("Categorias — CRUD", () => {
     const del = await request(app).delete(`${ana.base}/categories/${category.id}`).set(ana.authHeader);
     expect(del.status).toBe(409);
     expect(del.body.error.code).toBe("RESOURCE_IN_USE");
+    expect(del.body.error.message).toContain("is_active");
 
     const patch = await request(app)
       .patch(`${ana.base}/categories/${category.id}`)

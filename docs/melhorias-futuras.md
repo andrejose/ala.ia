@@ -1,6 +1,6 @@
 # Melhorias futuras
 
-Ideias registradas para depois da versão 1.0 (entrega da disciplina). Nada aqui está implementado.
+Ideias registradas para depois da versão 1.0 (entrega da disciplina). Nada aqui está implementado: o que for entregue sai desta lista.
 A ordem das seções não é de prioridade.
 
 ## 1. Importação de extratos bancários
@@ -37,14 +37,39 @@ Modelo proposto:
 - Os relatórios (`report_by_category`) passam a somar as partes no lugar do lançamento pai quando houver divisão.
 - No formulário: botão "Dividir em categorias", com linhas de categoria e valor e o quanto falta distribuir.
 
-Alternativa a avaliar junto: um tipo de conta **cartão de crédito**, em que cada compra é lançada no cartão com a sua categoria e o pagamento da fatura vira uma transferência da conta corrente para o cartão. Resolve o mesmo problema e ainda mostra a fatura em aberto.
+### Decisão: começar pelo tipo de conta cartão de crédito
+
+Avaliadas as duas opções, a escolha é implementar primeiro um tipo de conta **cartão de crédito** e deixar o rateio para depois, só se o uso real pedir.
+
+Como funciona: o cartão é uma conta cujo saldo representa uma dívida. Cada compra é uma **despesa** lançada no cartão com a sua categoria; o pagamento da fatura é uma **transferência** da conta corrente para o cartão.
+
+| Situação | Lançamento | Saldo do cartão |
+|---|---|---|
+| Mercado, R$ 400,00 | Despesa no Cartão, categoria Mercado | −400,00 |
+| Roupas, R$ 350,00 | Despesa no Cartão, categoria Roupas | −750,00 |
+| iFood, R$ 250,00 | Despesa no Cartão, categoria Alimentação | −1.000,00 (fatura em aberto) |
+| Pagamento da fatura | Transferência Corrente → Cartão, R$ 1.000,00 | 0,00 |
+
+Por que resolve o caso da fatura sem rateio: as compras já entram categorizadas, e transferências não têm categoria (`transactions_type_chk`), então o pagamento não aparece em `report_by_category` e nada é contado duas vezes.
+
+O que muda:
+
+- **Banco:** migration nova com `ALTER TYPE account_type ADD VALUE 'credit_card'` (só acrescenta; nada da v1.0 muda).
+- **Backend:** novo valor no enum de `schemas/accounts.schemas.js` e em `docs/components.js`.
+- **Frontend:** novo tipo em `lib/types.ts` e `accountTypes.ts`; saldo negativo exibido como "Fatura em aberto"; botão "Pagar fatura" que abre a transferência já preenchida.
+- **Depois (opcional):** limite e dias de fechamento/vencimento. Sem eles, o app mostra o total devido no cartão, não a fatura de cada mês.
+
+Limitações conhecidas:
+
+- **Compra única com várias categorias fora do cartão** (ex.: nota de mercado paga no Pix com comida e limpeza) continua precisando do rateio.
+- **Parcelamento:** exige lançar as parcelas futuras ou a compra inteira; pode ser resolvido junto com os lançamentos recorrentes.
+- **Estorno:** como `amount > 0`, entra como receita, o que distorce um pouco o relatório por categoria.
+- **Mais lançamentos:** cada compra vira um lançamento. A importação de extratos (seção 1) compensa isso, já que o Nubank exporta a fatura do cartão em CSV.
+- **Histórico:** faturas já lançadas como despesa única na corrente ficam como estão.
 
 ## 3. Outras melhorias do app
 
 - **Tela de relatórios:** gráfico por categoria e comparação mês a mês (Recharts ou similar).
-- **Nome do espaço pessoal:** trocar o automático "Finanças de Maria", criado no cadastro, por algo como "Pessoal".
-- **Arquivar categorias** (`is_active`, como já existe nas contas): permitiria tirar uma categoria antiga das listas sem perder o histórico. Hoje excluir uma categoria em uso é bloqueado com mensagem, então não é necessário para o MVP.
-- **Testes do frontend:** Vitest + Testing Library nos fluxos principais (entrar, lançar, convidar), rodando no CI.
 - **Testes do banco com pgTAP** (`supabase test db`), cobrindo RLS e triggers diretamente no Postgres.
 - **Lançamentos recorrentes:** aluguel, salário e assinaturas criados todo mês automaticamente.
 - **Metas e orçamento por categoria:** "gastar até R$ 800,00 em mercado".

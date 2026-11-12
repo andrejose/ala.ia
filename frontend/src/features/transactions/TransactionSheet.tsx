@@ -123,7 +123,10 @@ function TransactionForm({
 
   const isTransfer = type === "transfer";
   const categoryType = type === "income" ? "income" : "expense";
-  const categoryOptions = (categories.data ?? []).filter((c) => c.type === categoryType);
+  // Categorias arquivadas saem da lista, menos a que o lançamento já usa
+  const categoryOptions = (categories.data ?? []).filter(
+    (c) => c.type === categoryType && (c.is_active || c.id === transaction?.category_id)
+  );
   const errors = { ...fieldErrors(save.error), ...localErrors };
   const error = errorMessage(save.error, {
     INVALID_REFERENCE: "A conta ou a categoria escolhida não vale para este lançamento. Escolha outra.",

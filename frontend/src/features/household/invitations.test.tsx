@@ -90,6 +90,6 @@ describe("Convites recebidos", () => {
 
     await expect.poll(() => screen.queryByRole("region", { name: "Convites recebidos" })).toBeNull();
     expect(declined).toBe("inv1");
-    expect(screen.getByRole("heading", { level: 1, name: "Finanças de Maria" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Pessoal" })).toBeInTheDocument();
   });
 });
