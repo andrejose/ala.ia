@@ -70,7 +70,6 @@ Limitações conhecidas:
 ## 3. Outras melhorias do app
 
 - **Tela de relatórios:** gráfico por categoria e comparação mês a mês (Recharts ou similar).
-- **Testes do banco com pgTAP** (`supabase test db`), cobrindo RLS e triggers diretamente no Postgres.
 - **Lançamentos recorrentes:** aluguel, salário e assinaturas criados todo mês automaticamente.
 - **Metas e orçamento por categoria:** "gastar até R$ 800,00 em mercado".
 

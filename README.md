@@ -43,7 +43,7 @@ Decisões principais:
 | Backend      | Node.js + Express 5, Zod                                |
 | Banco        | Supabase (PostgreSQL 17) com Row Level Security         |
 | Autenticação | Supabase Auth                                           |
-| Testes       | Backend: Vitest + supertest (integração, contra o Supabase local). Frontend: Vitest + Testing Library + MSW |
+| Testes       | Banco: pgTAP. Backend: Vitest + supertest (integração, contra o Supabase local). Frontend: Vitest + Testing Library + MSW |
 | Documentação | OpenAPI 3.1 + Swagger UI                                |
 | Frontend     | React + Vite + TypeScript + Tailwind CSS + TanStack Query |
 | CI           | GitHub Actions                                          |
@@ -67,7 +67,8 @@ backend/
 └── supabase/
     ├── config.toml          # Configuração do Supabase CLI
     ├── schemas/             # Schema declarativo (fonte da verdade do banco)
-    └── migrations/          # Migrations geradas a partir dos schemas
+    ├── migrations/          # Migrations geradas a partir dos schemas
+    └── tests/database/      # Testes do banco (pgTAP)
 
 frontend/
 ├── src/
@@ -147,6 +148,7 @@ npm run dev             # http://localhost:3001 (Swagger em /docs)
 | `npm run dev`        | Sobe o servidor e reinicia a cada alteração |
 | `npm test`           | Roda os testes uma vez                      |
 | `npm run test:watch` | Roda os testes em modo observação           |
+| `npm run test:db`    | Roda os testes do banco (pgTAP)             |
 
 **Frontend** (com o backend rodando)
 
@@ -167,6 +169,18 @@ npm run dev             # http://localhost:5173
 O Vite repassa as chamadas de `/api` para o backend, então não é preciso configurar CORS em desenvolvimento. Para usar outra porta da API: `API_TARGET=http://localhost:3101 npm run dev`. Se o visual aparecer sem estilos depois de trocar de branch, reinicie o `npm run dev`.
 
 ## Testes
+
+### Banco (pgTAP)
+
+São **79 testes** em SQL, em `backend/supabase/tests/database/`, que falam direto com o Postgres, sem passar pela API. Cada arquivo roda numa transação desfeita no fim, então nada fica no banco local.
+
+```bash
+cd backend
+npx supabase start
+npm run test:db
+```
+
+Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de sempre ter um dono, o autor do lançamento, o **RLS** de todas as tabelas (quem é de fora, membro, dono e anônimo), as constraints dos lançamentos (tipo, categoria, transferência e espaço), o saldo das contas, os relatórios do mês e as funções de convite com cada erro que a API traduz.
 
 ### Backend
 
@@ -198,7 +212,7 @@ O GitHub Actions roda o workflow [`.github/workflows/ci.yml`](.github/workflows/
 
 | Job      | O que faz |
 | :------- | :-------- |
-| Backend  | Sobe o Supabase local no runner (Docker), aplica as migrations e roda os testes |
+| Backend  | Sobe o Supabase local no runner (Docker), aplica as migrations e roda os testes do banco (pgTAP) e os de integração |
 | Frontend | Checa os tipos (`npm run typecheck`), roda os testes (`npm test`) e faz o build (`npm run build`) |
 
 O CI não usa o projeto Supabase remoto nem segredos do repositório. A `main` é protegida: merge só por pull request, com os dois jobs passando.
