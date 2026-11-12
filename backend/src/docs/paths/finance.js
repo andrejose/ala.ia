@@ -1,5 +1,6 @@
 import { createAccountSchema, listAccountsQuery, updateAccountSchema } from "../../schemas/accounts.schemas.js";
 import { createCategorySchema, listCategoriesQuery, updateCategorySchema } from "../../schemas/categories.schemas.js";
+import { commitImportSchema, MAX_IMPORT_FILE, MAX_IMPORT_ROWS, previewQuery } from "../../schemas/imports.schemas.js";
 import { byCategoryQuery, MAX_SERIES_MONTHS, monthlyQueryFields, summaryQuery } from "../../schemas/reports.schemas.js";
 import {
   createTransactionSchema,
@@ -200,6 +201,56 @@ export const financePaths = {
         `lançamentos (zerados). Padrão: os últimos 6 meses. No máximo ${MAX_SERIES_MONTHS} meses.`,
       parameters: queryParams(monthlyQueryFields),
       responses: { 200: json("Meses do intervalo.", ref("ReportMonthly")), 400: badRequest, 401: unauthorized, 404: notFound },
+    },
+  },
+
+  "/households/{householdId}/imports/preview": {
+    parameters: [householdIdParam],
+    post: {
+      tags: ["Importação"],
+      summary: "Lê um extrato e mostra a prévia",
+      description:
+        "Envie o arquivo do extrato **cru no corpo** (ex.: `Content-Type: text/csv`), como veio do banco, " +
+        `até ${MAX_IMPORT_FILE}. Aceita o CSV do extrato do Banco do Brasil e do Santander e o CSV da fatura do ` +
+        "cartão Nubank; o banco é reconhecido pelo conteúdo. Nada é gravado: a resposta traz cada linha com o " +
+        "tipo, a categoria sugerida (pelas categorias já usadas em descrições parecidas) e o status: " +
+        "`new`, `imported` (já importada nesta conta) ou `similar` (mesma data e valor de um lançamento que já " +
+        "está na conta). O arquivo é lido em memória e descartado.",
+      parameters: queryParams(previewQuery),
+      requestBody: {
+        required: true,
+        content: { "text/csv": { schema: { type: "string", format: "binary" } } },
+      },
+      responses: {
+        200: json("Prévia da importação.", ref("ImportPreview")),
+        400: error(
+          "Arquivo vazio, formato não reconhecido ou linha em formato inesperado.",
+          "UNSUPPORTED_FORMAT",
+          "Não reconheci este arquivo. Por enquanto, a importação aceita: ..."
+        ),
+        401: unauthorized,
+        404: notFound,
+        413: error("Arquivo grande demais.", "PAYLOAD_TOO_LARGE", "O arquivo ou os dados enviados são grandes demais."),
+      },
+    },
+  },
+
+  "/households/{householdId}/imports": {
+    parameters: [householdIdParam],
+    post: {
+      tags: ["Importação"],
+      summary: "Grava as linhas escolhidas da prévia",
+      description:
+        `Até ${MAX_IMPORT_ROWS} linhas por vez, gravadas como lançamentos pagos na data do extrato, num único ` +
+        "insert: ou entram todas, ou nenhuma. Linha já importada na conta (mesmo `import_hash`) é ignorada e " +
+        "contada em `skipped`, então reenviar a mesma importação não duplica nada.",
+      requestBody: jsonBody(commitImportSchema),
+      responses: {
+        201: json("Resultado da importação.", ref("ImportResult")),
+        400: badRequest,
+        401: unauthorized,
+        404: notFound,
+      },
     },
   },
 };

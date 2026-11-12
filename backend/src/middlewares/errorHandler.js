@@ -16,6 +16,11 @@ export function errorHandler(err, req, res, next) {
     httpError = new HttpError(400, "INVALID_JSON", "O corpo da requisição não é um JSON válido.");
   }
 
+  // Corpo maior que o limite (ex.: extrato grande demais na importação)
+  if (!httpError && err.type === "entity.too.large") {
+    httpError = new HttpError(413, "PAYLOAD_TOO_LARGE", "O arquivo ou os dados enviados são grandes demais.");
+  }
+
   if (!httpError) {
     console.error(err);
     httpError = new HttpError(500, "INTERNAL_ERROR", "Erro interno do servidor.");

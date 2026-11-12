@@ -1,7 +1,8 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import * as accounts from "../controllers/accounts.controller.js";
 import * as categories from "../controllers/categories.controller.js";
 import * as households from "../controllers/households.controller.js";
+import * as imports from "../controllers/imports.controller.js";
 import * as invitations from "../controllers/invitations.controller.js";
 import * as reports from "../controllers/reports.controller.js";
 import * as transactions from "../controllers/transactions.controller.js";
@@ -17,6 +18,7 @@ import {
   updateHouseholdSchema,
   updateMemberSchema,
 } from "../schemas/households.schemas.js";
+import { commitImportSchema, MAX_IMPORT_FILE, previewQuery } from "../schemas/imports.schemas.js";
 import { byCategoryQuery, monthlyQuery, summaryQuery } from "../schemas/reports.schemas.js";
 import {
   createTransactionSchema,
@@ -90,3 +92,12 @@ household.delete("/transactions/:id", validate({ params: idParams }), transactio
 household.get("/reports/summary", validate({ query: summaryQuery }), reports.summary);
 household.get("/reports/by-category", validate({ query: byCategoryQuery }), reports.byCategory);
 household.get("/reports/monthly", validate({ query: monthlyQuery }), reports.monthly);
+
+// Importação de extratos: prévia (o arquivo vai cru no corpo) e gravação
+household.post(
+  "/imports/preview",
+  express.raw({ type: () => true, limit: MAX_IMPORT_FILE }),
+  validate({ query: previewQuery }),
+  imports.preview
+);
+household.post("/imports", validate({ body: commitImportSchema }), imports.commit);

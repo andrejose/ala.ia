@@ -153,3 +153,32 @@ export interface ReportMonthly {
   to: string;
   months: ReportSummary[];
 }
+
+// Importação de extratos (POST /households/:id/imports/preview)
+export type ImportRowStatus = "new" | "imported" | "similar";
+
+export interface ImportRow {
+  line: number;
+  import_hash: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: "income" | "expense";
+  category_id: string | null;
+  status: ImportRowStatus;
+  selected: boolean;
+  note: string | null;
+}
+
+export interface ImportPreview {
+  source: { id: string; label: string; kind: "checking" | "credit_card" };
+  account: { id: string; name: string; type: AccountType; is_active: boolean };
+  kind_mismatch: boolean;
+  summary: { total: number; new: number; imported: number; similar: number };
+  rows: ImportRow[];
+}
+
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+}

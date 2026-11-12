@@ -26,6 +26,8 @@ create table public.transactions (
   payment_date           date,
   created_at             timestamptz not null default now(),
   updated_at             timestamptz not null default now(),
+  -- Identificador da linha do extrato importado (nulo nos lançamentos feitos à mão)
+  import_hash            varchar(64),
 
   constraint transactions_account_fkey
     foreign key (account_id, household_id)
@@ -60,6 +62,10 @@ create index transactions_account_id_idx            on public.transactions (acco
 create index transactions_destination_account_id_idx on public.transactions (destination_account_id);
 create index transactions_category_id_idx           on public.transactions (category_id);
 create index transactions_user_id_idx               on public.transactions (user_id);
+
+-- Nulos não colidem, então só as linhas importadas entram na regra
+create unique index transactions_account_import_hash_key
+  on public.transactions (account_id, import_hash);
 
 create trigger transactions_set_updated_at
   before update on public.transactions

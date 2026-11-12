@@ -1,4 +1,5 @@
-import { Plus } from "lucide-react";
+import { FileUp, Plus } from "lucide-react";
+import { Link } from "react-router";
 import { useMemo, useState } from "react";
 import { SelectField } from "../../components/fields";
 import { MonthSwitcher } from "../../components/MonthSwitcher";
@@ -77,10 +78,19 @@ export function TransactionsPage() {
       <PageHeader
         title="Lançamentos"
         action={
-          <Button onClick={() => sheet.openNew()} className="h-10 px-4 text-sm">
-            <Plus className="size-4" aria-hidden="true" />
-            Novo
-          </Button>
+          <div className="flex gap-2">
+            <Link
+              to="/importar"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-primary-soft px-4 text-sm font-bold text-primary transition hover:brightness-95"
+            >
+              <FileUp className="size-4" aria-hidden="true" />
+              Importar
+            </Link>
+            <Button onClick={() => sheet.openNew()} className="h-10 px-4 text-sm">
+              <Plus className="size-4" aria-hidden="true" />
+              Novo
+            </Button>
+          </div>
         }
       />
 
