@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Ellipsis, LayoutDashboard, Plus, Tags, UserRound, Users, Wallet, type LucideIcon } from "lucide-react";
+import { ArrowLeftRight, ChartPie, Ellipsis, LayoutDashboard, Plus, Tags, UserRound, Users, Wallet, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 import { useTransactionSheet } from "../features/transactions/TransactionSheet";
@@ -15,6 +15,7 @@ const mainNav: NavItem[] = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
   { to: "/lancamentos", label: "Lançamentos", icon: ArrowLeftRight },
   { to: "/contas", label: "Contas", icon: Wallet },
+  { to: "/relatorios", label: "Relatórios", icon: ChartPie },
 ];
 
 const moreNav: NavItem[] = [

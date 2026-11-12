@@ -9,6 +9,8 @@ import type {
   Me,
   Member,
   MyInvitation,
+  ReportByCategory,
+  ReportSummary,
   Transaction,
 } from "../lib/types";
 
@@ -56,6 +58,12 @@ function initialDb() {
     invitations: [] as Invitation[],
     myInvitations: [] as MyInvitation[],
     members: [{ user_id: "u1", name: "Maria Silva", role: "owner", joined_at: "2026-11-01T10:00:00Z" }] as Member[],
+    // Relatórios: totais por mês ("YYYY-MM") e categorias por "YYYY-MM:tipo".
+    // Mês que não está aqui volta zerado.
+    reports: {
+      months: {} as Record<string, MonthTotals>,
+      byCategory: {} as Record<string, ReportByCategory["categories"]>,
+    },
     // O que o app enviou nas mutações, para os testes conferirem
     requests: {
       transactions: [] as unknown[],
@@ -65,7 +73,33 @@ function initialDb() {
   };
 }
 
+export interface MonthTotals {
+  income: { paid: number; pending: number };
+  expense: { paid: number; pending: number };
+}
+
 export let db = initialDb();
+
+// Resumo de um mês no formato da API, a partir de db.reports.months
+function monthReport(month: string): ReportSummary {
+  const totals = db.reports.months[month] ?? { income: { paid: 0, pending: 0 }, expense: { paid: 0, pending: 0 } };
+  const income = { ...totals.income, total: totals.income.paid + totals.income.pending };
+  const expense = { ...totals.expense, total: totals.expense.paid + totals.expense.pending };
+  return { month, income, expense, balance: { paid: income.paid - expense.paid, total: income.total - expense.total } };
+}
+
+// "2026-09", "2026-11" -> ["2026-09", "2026-10", "2026-11"]
+function monthsBetween(from: string, to: string) {
+  const months: string[] = [];
+  let [year, month] = from.split("-").map(Number);
+  for (let current = from; current <= to; ) {
+    months.push(current);
+    month += 1;
+    if (month > 12) [year, month] = [year + 1, 1];
+    current = `${year}-${String(month).padStart(2, "0")}`;
+  }
+  return months;
+}
 
 export function resetDb() {
   db = initialDb();
@@ -146,16 +180,21 @@ const handlers = [
     return HttpResponse.json(created, { status: 201 });
   }),
   http.get("*/api/households/:id/reports/summary", ({ request }) =>
-    HttpResponse.json({
-      month: new URL(request.url).searchParams.get("month"),
-      income: { paid: 0, pending: 0, total: 0 },
-      expense: { paid: 0, pending: 0, total: 0 },
-      balance: { paid: 0, total: 0 },
-    })
+    HttpResponse.json(monthReport(new URL(request.url).searchParams.get("month") ?? ""))
   ),
-  http.get("*/api/households/:id/reports/by-category", ({ request }) =>
-    HttpResponse.json({ month: new URL(request.url).searchParams.get("month"), type: "expense", total: 0, categories: [] })
-  ),
+  http.get("*/api/households/:id/reports/by-category", ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const month = params.get("month") ?? "";
+    const type = params.get("type") ?? "expense";
+    const categories = db.reports.byCategory[`${month}:${type}`] ?? [];
+    return HttpResponse.json({ month, type, total: categories.reduce((sum, c) => sum + c.total, 0), categories });
+  }),
+  http.get("*/api/households/:id/reports/monthly", ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const from = params.get("from") ?? "";
+    const to = params.get("to") ?? "";
+    return HttpResponse.json({ from, to, months: monthsBetween(from, to).map(monthReport) });
+  }),
   http.get("*/api/households/:id/members", () => HttpResponse.json(db.members)),
   http.get("*/api/households/:id/invitations", () => HttpResponse.json(db.invitations)),
   http.post("*/api/households/:id/invitations", async ({ request, params }) => {

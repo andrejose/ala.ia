@@ -44,3 +44,16 @@ export function greeting(date = new Date()): string {
   if (hour < 18) return "Boa tarde";
   return "Boa noite";
 }
+
+// "2026-11", -1 -> "2026-10" (vira o ano quando precisa)
+export function shiftMonth(yearMonth: string, delta: number): string {
+  const [year, month] = yearMonth.split("-").map(Number);
+  const date = new Date(year, month - 1 + delta, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// "2026-11" -> "nov"
+export function shortMonthName(yearMonth: string): string {
+  const [year, month] = yearMonth.split("-").map(Number);
+  return new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(year, month - 1, 1)).replace(".", "");
+}

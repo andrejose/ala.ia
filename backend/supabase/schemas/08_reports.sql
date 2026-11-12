@@ -82,3 +82,44 @@ as $$
   group by c.id, c.name, c.color, c.icon
   order by sum(t.amount) desc, c.name;
 $$;
+
+-- -----------------------------------------------------------------------------
+-- Mês a mês: o resumo de cada mês do intervalo, inclusive os meses sem
+-- lançamentos (vêm zerados), do mais antigo para o mais recente.
+-- Uso: supabase.rpc('report_monthly_series', { p_household_id, p_from: '2026-06-01', p_to: '2026-11-01' })
+-- -----------------------------------------------------------------------------
+create or replace function public.report_monthly_series(
+  p_household_id uuid,
+  p_from         date,
+  p_to           date
+)
+returns table (
+  month           date,
+  income_paid     numeric,
+  income_pending  numeric,
+  expense_paid    numeric,
+  expense_pending numeric
+)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select
+    m.month::date,
+    coalesce(sum(t.amount) filter (where t.type = 'income'  and t.payment_date is not null), 0),
+    coalesce(sum(t.amount) filter (where t.type = 'income'  and t.payment_date is null),     0),
+    coalesce(sum(t.amount) filter (where t.type = 'expense' and t.payment_date is not null), 0),
+    coalesce(sum(t.amount) filter (where t.type = 'expense' and t.payment_date is null),     0)
+  from generate_series(
+         date_trunc('month', p_from::timestamp),
+         date_trunc('month', p_to::timestamp),
+         interval '1 month'
+       ) as m(month)
+  left join public.transactions t
+    on t.household_id = p_household_id
+   and t.due_date >= m.month::date
+   and t.due_date <  (m.month + interval '1 month')::date
+  group by m.month
+  order by m.month;
+$$;

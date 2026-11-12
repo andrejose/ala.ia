@@ -89,10 +89,77 @@ describe("GET /reports/by-category", () => {
   });
 });
 
+describe("GET /reports/monthly", () => {
+  const zero = { paid: 0, pending: 0, total: 0 };
+
+  it("devolve cada mês do intervalo, com os meses vazios zerados", async () => {
+    const res = await request(app)
+      .get(`${user.base}/reports/monthly?from=2026-08&to=2026-11`)
+      .set(user.authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      from: "2026-08",
+      to: "2026-11",
+      months: [
+        { month: "2026-08", income: zero, expense: zero, balance: { paid: 0, total: 0 } },
+        { month: "2026-09", income: zero, expense: { paid: 999, pending: 0, total: 999 }, balance: { paid: -999, total: -999 } },
+        {
+          month: "2026-10",
+          income: { paid: 5000, pending: 300, total: 5300 },
+          expense: { paid: 2050.5, pending: 100, total: 2150.5 },
+          balance: { paid: 2949.5, total: 3149.5 },
+        },
+        { month: "2026-11", income: zero, expense: { paid: 999, pending: 0, total: 999 }, balance: { paid: -999, total: -999 } },
+      ],
+    });
+  });
+
+  it("sem parâmetros, traz os últimos 6 meses até o atual", async () => {
+    const res = await request(app).get(`${user.base}/reports/monthly`).set(user.authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.months).toHaveLength(6);
+    expect(res.body.to).toBe(new Date().toISOString().slice(0, 7));
+    expect(res.body.months.at(-1).month).toBe(res.body.to);
+  });
+
+  it("só com to, conta os 6 meses para trás (virando o ano)", async () => {
+    const res = await request(app).get(`${user.base}/reports/monthly?to=2026-03`).set(user.authHeader);
+
+    expect(res.body.from).toBe("2025-10");
+    expect(res.body.months.map((m) => m.month)).toEqual(["2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03"]);
+  });
+
+  it("recusa início depois do fim e mais de 24 meses (400)", async () => {
+    const backwards = await request(app)
+      .get(`${user.base}/reports/monthly?from=2026-11&to=2026-10`)
+      .set(user.authHeader);
+    const tooLong = await request(app)
+      .get(`${user.base}/reports/monthly?from=2024-10&to=2026-10`)
+      .set(user.authHeader);
+
+    expect(backwards.status).toBe(400);
+    expect(tooLong.status).toBe(400);
+    expect(tooLong.body.error.details).toEqual([expect.objectContaining({ path: "from" })]);
+  });
+
+  it("aceita exatamente 24 meses", async () => {
+    const res = await request(app)
+      .get(`${user.base}/reports/monthly?from=2024-11&to=2026-10`)
+      .set(user.authHeader);
+
+    expect(res.status).toBe(200);
+    expect(res.body.months).toHaveLength(24);
+  });
+});
+
 describe("Relatórios — isolamento (RLS)", () => {
   it("outro usuário não vê os relatórios do household (404)", async () => {
     const res = await request(app).get(`${user.base}/reports/summary?month=2026-10`).set(other.authHeader);
+    const monthly = await request(app).get(`${user.base}/reports/monthly`).set(other.authHeader);
 
     expect(res.status).toBe(404);
+    expect(monthly.status).toBe(404);
   });
 });

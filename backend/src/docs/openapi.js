@@ -27,7 +27,7 @@ export const openApiSpec = {
     { name: "Contas", description: "Contas do household, com saldo calculado" },
     { name: "Categorias", description: "Categorias de receitas e despesas" },
     { name: "Lançamentos", description: "Receitas, despesas e transferências" },
-    { name: "Relatórios", description: "Resumo do mês e gastos por categoria" },
+    { name: "Relatórios", description: "Resumo do mês, gastos por categoria e comparação mês a mês" },
   ],
   // Por padrão toda rota exige o token; rotas públicas declaram "security: []"
   security: [{ bearerAuth: [] }],

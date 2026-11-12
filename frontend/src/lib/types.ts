@@ -147,3 +147,9 @@ export interface MyInvitation {
   created_at: string;
   expires_at: string;
 }
+
+export interface ReportMonthly {
+  from: string;
+  to: string;
+  months: ReportSummary[];
+}

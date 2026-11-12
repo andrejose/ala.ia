@@ -2,6 +2,23 @@
 
 const round = (value) => Math.round(Number(value) * 100) / 100;
 
+// Linha de report_monthly_summary ou report_monthly_series -> receitas, despesas e resultado
+function summaryTotals(row) {
+  const income = { paid: round(row.income_paid), pending: round(row.income_pending) };
+  const expense = { paid: round(row.expense_paid), pending: round(row.expense_pending) };
+  income.total = round(income.paid + income.pending);
+  expense.total = round(expense.paid + expense.pending);
+
+  return {
+    income,
+    expense,
+    balance: {
+      paid: round(income.paid - expense.paid),
+      total: round(income.total - expense.total),
+    },
+  };
+}
+
 // GET /households/:householdId/reports/summary?month=YYYY-MM
 export async function summary(req, res) {
   const { month } = req.validated.query;
@@ -11,19 +28,24 @@ export async function summary(req, res) {
     .single();
   if (error) throw error;
 
-  const income = { paid: round(data.income_paid), pending: round(data.income_pending) };
-  const expense = { paid: round(data.expense_paid), pending: round(data.expense_pending) };
-  income.total = round(income.paid + income.pending);
-  expense.total = round(expense.paid + expense.pending);
+  res.status(200).json({ month: month.slice(0, 7), ...summaryTotals(data) });
+}
+
+// GET /households/:householdId/reports/monthly?from=YYYY-MM&to=YYYY-MM
+export async function monthly(req, res) {
+  const { from, to } = req.validated.query;
+
+  const { data, error } = await req.supabase.rpc("report_monthly_series", {
+    p_household_id: req.household.id,
+    p_from: from,
+    p_to: to,
+  });
+  if (error) throw error;
 
   res.status(200).json({
-    month: month.slice(0, 7),
-    income,
-    expense,
-    balance: {
-      paid: round(income.paid - expense.paid),
-      total: round(income.total - expense.total),
-    },
+    from: from.slice(0, 7),
+    to: to.slice(0, 7),
+    months: data.map((row) => ({ month: row.month.slice(0, 7), ...summaryTotals(row) })),
   });
 }
 
