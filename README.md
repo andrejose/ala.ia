@@ -43,7 +43,7 @@ Decisões principais:
 | Backend      | Node.js + Express 5, Zod                                |
 | Banco        | Supabase (PostgreSQL 17) com Row Level Security         |
 | Autenticação | Supabase Auth                                           |
-| Testes       | Vitest + supertest (integração, contra o Supabase local) |
+| Testes       | Backend: Vitest + supertest (integração, contra o Supabase local). Frontend: Vitest + Testing Library + MSW |
 | Documentação | OpenAPI 3.1 + Swagger UI                                |
 | Frontend     | React + Vite + TypeScript + Tailwind CSS + TanStack Query |
 | CI           | GitHub Actions                                          |
@@ -71,11 +71,14 @@ backend/
 
 frontend/
 ├── src/
+│   ├── app/                 # Rotas e cache (usados pelo main.tsx e pelos testes)
 │   ├── components/          # Peças visuais (logo, navegação, campos, diálogo)
 │   ├── features/            # Telas: entrada, painel, lançamentos, contas,
-│   │                        #   categorias, espaço e convites, perfil
-│   └── lib/                 # Cliente da API, consultas, formatação e tema
-└── vite.config.ts           # Proxy /api -> backend em desenvolvimento
+│   │                        #   categorias, espaço e convites, perfil (+ testes *.test.tsx)
+│   ├── lib/                 # Cliente da API, consultas, formatação e tema
+│   └── test/                # API simulada (MSW) e utilitários dos testes
+├── vite.config.ts           # Proxy /api -> backend em desenvolvimento
+└── vitest.config.ts         # Configuração dos testes (jsdom)
 
 docs/                        # Roteiros, decisões e melhorias futuras
 .github/workflows/ci.yml     # CI
@@ -153,9 +156,19 @@ npm install
 npm run dev             # http://localhost:5173
 ```
 
+| Script               | Descrição                                   |
+| :------------------- | :------------------------------------------ |
+| `npm run dev`        | Sobe o app em desenvolvimento               |
+| `npm run build`      | Gera a versão de produção                   |
+| `npm run typecheck`  | Checa os tipos (TypeScript)                 |
+| `npm test`           | Roda os testes uma vez                      |
+| `npm run test:watch` | Roda os testes em modo observação           |
+
 O Vite repassa as chamadas de `/api` para o backend, então não é preciso configurar CORS em desenvolvimento. Para usar outra porta da API: `API_TARGET=http://localhost:3101 npm run dev`. Se o visual aparecer sem estilos depois de trocar de branch, reinicie o `npm run dev`.
 
 ## Testes
+
+### Backend
 
 São **92 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
@@ -168,6 +181,17 @@ npm test
 
 Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (401) e o bloqueio de acesso ao espaço de outra pessoa (RLS). Também cobrem cálculo de saldo, relatórios, regra do último dono, fluxo completo de convites, regras do banco acessado direto (sem a API) e um teste que garante que **toda rota da API está documentada** no Swagger.
 
+### Frontend
+
+São **18 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
+
+```bash
+cd frontend
+npm test
+```
+
+Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente) e **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
+
 ## Integração contínua (CI)
 
 O GitHub Actions roda o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) a cada pull request e a cada push na `main`:
@@ -175,7 +199,7 @@ O GitHub Actions roda o workflow [`.github/workflows/ci.yml`](.github/workflows/
 | Job      | O que faz |
 | :------- | :-------- |
 | Backend  | Sobe o Supabase local no runner (Docker), aplica as migrations e roda os testes |
-| Frontend | Checa os tipos (`npm run typecheck`) e faz o build (`npm run build`) |
+| Frontend | Checa os tipos (`npm run typecheck`), roda os testes (`npm test`) e faz o build (`npm run build`) |
 
 O CI não usa o projeto Supabase remoto nem segredos do repositório. A `main` é protegida: merge só por pull request, com os dois jobs passando.
 
@@ -192,7 +216,6 @@ O CI não usa o projeto Supabase remoto nem segredos do repositório. A `main` �
 
 - Roda **só localmente**; publicar exige liberar CORS e hospedar backend e frontend (ver [melhorias futuras](docs/melhorias-futuras.md#4-publicação)).
 - O **aceite de convites confia no e-mail da conta**: no projeto Supabase remoto, a confirmação de e-mail precisa estar ligada.
-- O frontend ainda **não tem testes automatizados** (o CI checa tipos e build).
 - A sessão guarda o `refresh_token` no `localStorage`, adequado ao projeto; em produção, cookies `httpOnly` seriam mais seguros.
 
 ## Equipe
