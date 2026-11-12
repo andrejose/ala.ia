@@ -3,7 +3,8 @@
 # A cada pull request e a cada push na main:
 #   - backend:  sobe o Supabase local no runner (Docker), aplica as migrations
 #               e roda os testes de integração (Vitest + supertest);
-#   - frontend: checa os tipos (TypeScript) e faz o build (Vite).
+#   - frontend: checa os tipos (TypeScript), roda os testes (Vitest +
+#               Testing Library, com a API simulada pelo MSW) e faz o build (Vite).
 #
 # Nada aqui usa o projeto Supabase remoto nem segredos do repositório.
 
@@ -73,6 +74,8 @@ jobs:
         if: always()
         run: npx supabase stop --no-backup
 
+  # O nome do job (abaixo) é o check obrigatório da main; mudar o nome exige
+  # atualizar a proteção da branch no GitHub.
   frontend:
     name: Frontend (tipos e build)
     runs-on: ubuntu-latest
@@ -95,6 +98,9 @@ jobs:
 
       - name: Checa os tipos
         run: npm run typecheck
+
+      - name: Roda os testes
+        run: npm test
 
       - name: Faz o build
         run: npm run build
