@@ -146,7 +146,7 @@ export const components = {
         id: { type: "string", format: "uuid" },
         household_id: { type: "string", format: "uuid" },
         name: { type: "string", example: "Nubank" },
-        type: { type: "string", enum: ["checking", "savings", "investment", "cash"] },
+        type: { type: "string", enum: ["checking", "savings", "investment", "cash", "credit_card"] },
         is_active: { type: "boolean", description: "false = conta arquivada." },
         initial_balance: { type: "number", example: 1000 },
         current_balance: {

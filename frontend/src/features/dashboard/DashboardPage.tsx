@@ -19,7 +19,7 @@ import {
   useSpendingByCategory,
 } from "../../lib/queries";
 import type { Account, Category, ReportSummary, Transaction } from "../../lib/types";
-import { accountTypes } from "../accounts/accountTypes";
+import { accountTypes, balanceDisplay } from "../accounts/accountTypes";
 import { useHousehold } from "../household/HouseholdProvider";
 import { ReceivedInvitations } from "../household/ReceivedInvitations";
 import { TransactionRow } from "../transactions/TransactionRow";
@@ -316,15 +316,19 @@ function AccountsList({ householdId }: { householdId: string }) {
         <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 lg:flex-col lg:overflow-visible">
           {accounts.map((account) => {
             const Icon = accountTypes[account.type].icon;
+            const { caption, value } = balanceDisplay(account);
             return (
               <Card key={account.id} className="min-w-[180px] snap-start p-4 lg:flex lg:items-center lg:gap-3">
                 <span className="grid size-10 place-items-center rounded-2xl bg-primary-soft text-primary">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
                 <div className="mt-3 lg:mt-0 lg:flex-1">
-                  <p className="text-sm font-semibold text-muted">{account.name}</p>
+                  <p className="text-sm font-semibold text-muted">
+                    {account.name}
+                    {caption && <span className="font-normal"> · {caption.toLowerCase()}</span>}
+                  </p>
                   <p className="font-display text-lg font-semibold">
-                    <Money value={account.current_balance} />
+                    <Money value={value} />
                   </p>
                 </div>
               </Card>

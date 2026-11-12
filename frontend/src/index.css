@@ -17,9 +17,9 @@
   --muted: #6e655c;        /* texto secundário */
   --line: #e6ddd1;         /* bordas e divisórias */
 
-  --primary: #2f6b5e;      /* verde-sálvia */
+  --primary: #6f4a32;      /* café */
   --primary-ink: #faf6f0;  /* texto sobre a cor principal */
-  --primary-soft: #dfece6;
+  --primary-soft: #efe3d8;
   --accent: #e08a5b;       /* damasco: destaques e a asa do logo */
   --accent-soft: #fbe6d8;
 
@@ -42,9 +42,9 @@
     --ink: #f2ede6;
     --muted: #aaa196;
     --line: #36302a;
-    --primary: #86c3b2;
-    --primary-ink: #13231f;
-    --primary-soft: #23352f;
+    --primary: #d4a985;
+    --primary-ink: #24170f;
+    --primary-soft: #382a21;
     --accent: #f0a57c;
     --accent-soft: #3a2a20;
     --income: #73c99d;
@@ -65,9 +65,9 @@
   --ink: #f2ede6;
   --muted: #aaa196;
   --line: #36302a;
-  --primary: #86c3b2;
-  --primary-ink: #13231f;
-  --primary-soft: #23352f;
+  --primary: #d4a985;
+  --primary-ink: #24170f;
+  --primary-soft: #382a21;
   --accent: #f0a57c;
   --accent-soft: #3a2a20;
   --income: #73c99d;

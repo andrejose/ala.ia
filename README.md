@@ -11,7 +11,8 @@ Sistema de controle financeiro pessoal e compartilhado: uma **API REST** (Node.j
 ## Funcionalidades
 
 - **Cadastro e login**, com sessão renovada automaticamente.
-- **Contas** (corrente, poupança, investimento, dinheiro) com **saldo calculado**: saldo inicial + lançamentos pagos. Contas com histórico são arquivadas, não excluídas.
+- **Contas** (corrente, poupança, investimento, dinheiro e cartão de crédito) com **saldo calculado**: saldo inicial + lançamentos pagos. Contas com histórico são arquivadas, não excluídas.
+- **Cartão de crédito**: cada compra é uma despesa no cartão, com a sua categoria, e o saldo negativo aparece como **fatura em aberto**. "Pagar fatura" abre a transferência da conta corrente para o cartão já preenchida; como transferência não tem categoria, o pagamento não conta duas vezes nos relatórios.
 - **Categorias** de receita e despesa, com cor e ícone. Todo cadastro já começa com Salário, Mercado, Transporte e Lazer.
 - **Lançamentos**: receitas, despesas e transferências entre contas; pendentes (a pagar ou a receber) não entram no saldo até serem marcados como pagos.
 - **Relatórios**: total de entradas e saídas do mês (pagas e pendentes), gastos e receitas por categoria em gráfico de rosca, comparação com o mês anterior e gráfico mês a mês dos últimos 6 meses.
@@ -172,7 +173,7 @@ O Vite repassa as chamadas de `/api` para o backend, então não é preciso conf
 
 ### Banco (pgTAP)
 
-São **84 testes** em SQL, em `backend/supabase/tests/database/`, que falam direto com o Postgres, sem passar pela API. Cada arquivo roda numa transação desfeita no fim, então nada fica no banco local.
+São **89 testes** em SQL, em `backend/supabase/tests/database/`, que falam direto com o Postgres, sem passar pela API. Cada arquivo roda numa transação desfeita no fim, então nada fica no banco local.
 
 ```bash
 cd backend
@@ -180,11 +181,11 @@ npx supabase start
 npm run test:db
 ```
 
-Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de sempre ter um dono, o autor do lançamento, o **RLS** de todas as tabelas (quem é de fora, membro, dono e anônimo), as constraints dos lançamentos (tipo, categoria, transferência e espaço), o saldo das contas, os relatórios (do mês e mês a mês) e as funções de convite com cada erro que a API traduz.
+Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de sempre ter um dono, o autor do lançamento, o **RLS** de todas as tabelas (quem é de fora, membro, dono e anônimo), as constraints dos lançamentos (tipo, categoria, transferência e espaço), o saldo das contas, o fluxo do cartão de crédito (compras, fatura e pagamento), os relatórios (do mês e mês a mês) e as funções de convite com cada erro que a API traduz.
 
 ### Backend
 
-São **99 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+São **100 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
 ```bash
 cd backend
@@ -197,14 +198,14 @@ Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (
 
 ### Frontend
 
-São **27 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
+São **31 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
 
 ```bash
 cd frontend
 npm test
 ```
 
-Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente), **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido) e **arquivar categorias** (arquivar, reativar, sugestão ao excluir uma em uso e o que o formulário de lançamento oferece) e **relatórios** (totais, comparação com o mês anterior, despesas e receitas por categoria e a navegação pelo gráfico mês a mês). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
+Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente), **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido) e **arquivar categorias** (arquivar, reativar, sugestão ao excluir uma em uso e o que o formulário de lançamento oferece), **relatórios** (totais, comparação com o mês anterior, despesas e receitas por categoria e a navegação pelo gráfico mês a mês) e o **cartão de crédito** (cadastro com a fatura em aberto, fatura no lugar do saldo e "Pagar fatura" abrindo a transferência preenchida). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
 
 ## Integração contínua (CI)
 

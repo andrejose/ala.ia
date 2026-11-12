@@ -29,7 +29,7 @@ Linguagem próxima ("Olá, Maria", "você gastou"), sem jargão financeiro.
 | Fundo | `#FAF6F0` creme | `#161412` |
 | Superfície | `#FFFFFF` | `#201D1A` |
 | Texto | `#2B2622` | `#F2EDE6` |
-| Principal (sálvia) | `#2F6B5E` | `#86C3B2` |
+| Principal (café) | `#6F4A32` | `#D4A985` |
 | Receita | `#2F7D5B` | `#73C99D` |
 | Despesa (argila) | `#B4513A` | `#EC9077` |
 | Pendente (ocre) | `#9A7420` | `#E2B95B` |

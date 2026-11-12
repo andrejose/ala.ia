@@ -9,7 +9,8 @@ create type public.account_type as enum (
   'checking',    -- Conta corrente
   'savings',     -- Poupança
   'investment',  -- Investimentos
-  'cash'         -- Dinheiro em espécie / carteira
+  'cash',        -- Dinheiro em espécie / carteira
+  'credit_card'  -- Cartão de crédito: saldo negativo é a fatura em aberto
 );
 
 -- Natureza da transação. Usado também nas categorias (apenas income/expense):

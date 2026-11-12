@@ -69,6 +69,7 @@ function initialDb() {
       transactions: [] as unknown[],
       invitations: [] as unknown[],
       categories: [] as unknown[],
+      accounts: [] as unknown[],
     },
   };
 }
@@ -145,6 +146,19 @@ const handlers = [
   http.get("*/api/households/:id/accounts", ({ params }) =>
     HttpResponse.json(db.accounts.filter((a) => a.household_id === params.id))
   ),
+  http.post("*/api/households/:id/accounts", async ({ request, params }) => {
+    const body = (await request.json()) as Pick<Account, "name" | "type" | "initial_balance">;
+    db.requests.accounts.push(body);
+    const created: Account = {
+      ...body,
+      id: `a${db.accounts.length + 1}`,
+      household_id: String(params.id),
+      is_active: true,
+      current_balance: body.initial_balance,
+    };
+    db.accounts.push(created);
+    return HttpResponse.json(created, { status: 201 });
+  }),
   http.get("*/api/households/:id/categories", ({ params }) =>
     HttpResponse.json(db.categories.filter((c) => c.household_id === params.id))
   ),
