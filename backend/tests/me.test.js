@@ -15,7 +15,7 @@ describe("GET /me", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ id: user.id, name: "Carla Souza", email: user.email });
     expect(res.body.households).toHaveLength(1);
-    expect(res.body.households[0]).toMatchObject({ name: "Finanças de Carla Souza", role: "owner" });
+    expect(res.body.households[0]).toMatchObject({ name: "Pessoal", role: "owner" });
   });
 
   it("sem token devolve 401", async () => {
@@ -37,7 +37,9 @@ describe("GET /me", () => {
     const res = await request(app).get("/me").set(other.authHeader);
 
     expect(res.body.households).toHaveLength(1);
-    expect(res.body.households[0].name).toBe("Finanças de Outra Pessoa");
+    // Os dois espaços se chamam "Pessoal": o que distingue é o id
+    expect(res.body.households[0].id).not.toBe(user.householdId);
+    expect(res.body.households[0].name).toBe("Pessoal");
   });
 });
 

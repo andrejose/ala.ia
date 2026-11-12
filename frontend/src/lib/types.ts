@@ -59,6 +59,7 @@ export interface Category {
   type: CategoryType;
   color: string | null;
   icon: string | null;
+  is_active: boolean;
 }
 
 export interface Transaction {

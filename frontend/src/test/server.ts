@@ -24,7 +24,7 @@ export const user = { id: "u1", email: "maria@exemplo.com", name: "Maria Silva",
 
 export const personal: Household = {
   id: "h1",
-  name: "Finanças de Maria",
+  name: "Pessoal",
   role: "owner",
   created_at: "2026-11-01T10:00:00Z",
   updated_at: "2026-11-01T10:00:00Z",
@@ -49,8 +49,8 @@ function initialDb() {
       { id: "a2", household_id: "h1", name: "Carteira", type: "cash", is_active: true, initial_balance: 50, current_balance: 50 },
     ] as Account[],
     categories: [
-      { id: "c1", household_id: "h1", name: "Mercado", type: "expense", color: null, icon: null },
-      { id: "c2", household_id: "h1", name: "Salário", type: "income", color: null, icon: null },
+      { id: "c1", household_id: "h1", name: "Mercado", type: "expense", color: null, icon: null, is_active: true },
+      { id: "c2", household_id: "h1", name: "Salário", type: "income", color: null, icon: null, is_active: true },
     ] as Category[],
     transactions: [] as Transaction[],
     invitations: [] as Invitation[],
@@ -60,6 +60,7 @@ function initialDb() {
     requests: {
       transactions: [] as unknown[],
       invitations: [] as unknown[],
+      categories: [] as unknown[],
     },
   };
 }
@@ -113,6 +114,21 @@ const handlers = [
   http.get("*/api/households/:id/categories", ({ params }) =>
     HttpResponse.json(db.categories.filter((c) => c.household_id === params.id))
   ),
+  http.patch("*/api/households/:id/categories/:categoryId", async ({ request, params }) => {
+    const body = (await request.json()) as Partial<Category>;
+    db.requests.categories.push(body);
+    const category = db.categories.find((c) => c.id === params.categoryId);
+    if (!category) return apiError(404, "NOT_FOUND", "Categoria não encontrada.");
+    Object.assign(category, body);
+    return HttpResponse.json(category);
+  }),
+  http.delete("*/api/households/:id/categories/:categoryId", ({ params }) => {
+    if (db.transactions.some((t) => t.category_id === params.categoryId)) {
+      return apiError(409, "RESOURCE_IN_USE", "A categoria tem lançamentos: não pode ser excluída nem mudar de tipo.");
+    }
+    db.categories = db.categories.filter((c) => c.id !== params.categoryId);
+    return new HttpResponse(null, { status: 204 });
+  }),
   http.get("*/api/households/:id/transactions", ({ request }) => {
     const url = new URL(request.url);
     const limit = Number(url.searchParams.get("limit") ?? 30);

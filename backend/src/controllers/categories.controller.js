@@ -1,6 +1,6 @@
 import { HttpError } from "../errors/HttpError.js";
 
-const columns = "id, household_id, name, type, color, icon, created_at, updated_at";
+const columns = "id, household_id, name, type, color, icon, is_active, created_at, updated_at";
 
 // GET /households/:householdId/categories
 export async function list(req, res) {
@@ -11,8 +11,9 @@ export async function list(req, res) {
     .order("type")
     .order("name");
 
-  const { type } = req.validated.query;
+  const { type, is_active } = req.validated.query;
   if (type) query = query.eq("type", type);
+  if (is_active !== undefined) query = query.eq("is_active", is_active);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -41,7 +42,7 @@ function categoryConflict(error) {
     return new HttpError(
       409,
       "RESOURCE_IN_USE",
-      "A categoria tem lançamentos: não pode ser excluída nem mudar de tipo."
+      "A categoria tem lançamentos: não pode ser excluída nem mudar de tipo. Para tirá-la das listas, arquive-a com PATCH { \"is_active\": false }."
     );
   }
   return error;
@@ -59,7 +60,7 @@ export async function create(req, res) {
   res.status(201).json(data);
 }
 
-// PATCH /households/:householdId/categories/:id
+// PATCH /households/:householdId/categories/:id — também arquiva (is_active: false)
 export async function update(req, res) {
   const { data, error } = await req.supabase
     .from("categories")

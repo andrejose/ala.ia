@@ -93,7 +93,7 @@ export const components = {
       type: "object",
       properties: {
         id: { type: "string", format: "uuid" },
-        name: { type: "string", example: "Finanças de Maria Silva" },
+        name: { type: "string", example: "Pessoal" },
         role: { type: "string", enum: ["owner", "member"], description: "Papel do usuário logado neste household." },
         created_at: { type: "string", format: "date-time" },
         updated_at: { type: "string", format: "date-time" },
@@ -166,6 +166,7 @@ export const components = {
         type: { type: "string", enum: ["income", "expense"] },
         color: { type: ["string", "null"], example: "#FF8800" },
         icon: { type: ["string", "null"], example: "shopping-cart" },
+        is_active: { type: "boolean", description: "false = categoria arquivada (fora das listas, histórico mantido)." },
         created_at: { type: "string", format: "date-time" },
         updated_at: { type: "string", format: "date-time" },
       },

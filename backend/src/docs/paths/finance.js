@@ -128,14 +128,16 @@ export const financePaths = {
     listQuery: listCategoriesQuery,
     extra: {
       plural: "as categorias",
+      listDescription: "Inclui as categorias arquivadas (`is_active: false`); filtre com `?is_active=true`.",
+      updateDescription: 'Para arquivar uma categoria (ela sai das listas, mas o histórico continua), envie `{ "is_active": false }`.',
       createErrors: {
         409: error("Já existe categoria com esse nome e tipo.", "CONFLICT", "Já existe uma categoria com esse nome e tipo neste household."),
       },
       updateErrors: {
-        409: error("Nome duplicado, ou mudança de tipo de categoria com lançamentos.", "RESOURCE_IN_USE", "A categoria tem lançamentos: não pode ser excluída nem mudar de tipo."),
+        409: error("Nome duplicado, ou mudança de tipo de categoria com lançamentos.", "RESOURCE_IN_USE", 'A categoria tem lançamentos: não pode ser excluída nem mudar de tipo. Para tirá-la das listas, arquive-a com PATCH { "is_active": false }.'),
       },
       deleteErrors: {
-        409: error("A categoria tem lançamentos.", "RESOURCE_IN_USE", "A categoria tem lançamentos: não pode ser excluída nem mudar de tipo."),
+        409: error("A categoria tem lançamentos.", "RESOURCE_IN_USE", 'A categoria tem lançamentos: não pode ser excluída nem mudar de tipo. Para tirá-la das listas, arquive-a com PATCH { "is_active": false }.'),
       },
     },
   }),

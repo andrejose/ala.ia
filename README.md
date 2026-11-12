@@ -86,7 +86,7 @@ docs/                        # Roteiros, decisões e melhorias futuras
 
 ## Banco de dados
 
-Todos os dados financeiros pertencem a um **household** (o "espaço"). Ao se cadastrar, o usuário ganha automaticamente um perfil, um espaço pessoal (do qual é dono) e as categorias padrão.
+Todos os dados financeiros pertencem a um **household** (o "espaço"). Ao se cadastrar, o usuário ganha automaticamente um perfil, um espaço pessoal chamado "Pessoal" (do qual é dono) e as categorias padrão.
 
 | Tabela / View           | Descrição                                                         |
 | :---------------------- | :---------------------------------------------------------------- |
@@ -95,7 +95,7 @@ Todos os dados financeiros pertencem a um **household** (o "espaço"). Ao se cad
 | `household_members`     | Quem participa de cada espaço e com qual papel (`owner`/`member`) |
 | `household_invitations` | Convites (pendente, aceito, recusado, cancelado), válidos por 7 dias |
 | `accounts`              | Contas e saldo inicial                                            |
-| `categories`            | Categorias de receita e despesa                                   |
+| `categories`            | Categorias de receita e despesa (podem ser arquivadas)            |
 | `transactions`          | Receitas, despesas e transferências                               |
 | `account_balances`      | View com o saldo atual de cada conta (só lançamentos pagos)       |
 
@@ -170,7 +170,7 @@ O Vite repassa as chamadas de `/api` para o backend, então não é preciso conf
 
 ### Backend
 
-São **92 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+São **94 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
 ```bash
 cd backend
@@ -183,14 +183,14 @@ Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (
 
 ### Frontend
 
-São **18 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
+São **23 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
 
 ```bash
 cd frontend
 npm test
 ```
 
-Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente) e **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
+Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente), **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido) e **arquivar categorias** (arquivar, reativar, sugestão ao excluir uma em uso e o que o formulário de lançamento oferece). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
 
 ## Integração contínua (CI)
 

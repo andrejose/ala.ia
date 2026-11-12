@@ -11,6 +11,7 @@ create table public.categories (
   type         public.transaction_type not null,
   color        varchar(7),   -- hexadecimal, ex.: #FF8800
   icon         varchar(50),  -- nome do ícone usado no frontend
+  is_active    boolean not null default true,  -- arquivar em vez de excluir
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
 

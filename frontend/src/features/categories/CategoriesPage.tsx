@@ -14,8 +14,11 @@ export function CategoriesPage() {
   const { data, isLoading } = useCategories(household?.id);
   const [type, setType] = useState<CategoryType>("expense");
   const [editing, setEditing] = useState<Category | "new" | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
-  const list = (data ?? []).filter((c) => c.type === type);
+  const ofType = (data ?? []).filter((c) => c.type === type);
+  const list = ofType.filter((c) => c.is_active);
+  const archived = ofType.filter((c) => !c.is_active);
   const noun = type === "expense" ? "despesa" : "receita";
 
   return (
@@ -47,7 +50,9 @@ export function CategoriesPage() {
 
       {data && list.length === 0 && (
         <Card className="p-6">
-          <p className="font-semibold">Nenhuma categoria de {noun} ainda.</p>
+          <p className="font-semibold">
+            {archived.length > 0 ? `Nenhuma categoria de ${noun} em uso.` : `Nenhuma categoria de ${noun} ainda.`}
+          </p>
           <p className="mt-1 text-muted">
             {type === "expense"
               ? "Crie as que fazem sentido para você, como Mercado, Moradia ou Farmácia."
@@ -59,21 +64,24 @@ export function CategoriesPage() {
         </Card>
       )}
 
-      {list.length > 0 && (
-        <Card className="divide-y divide-line overflow-hidden">
-          {list.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => setEditing(category)}
-              className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-surface-2/60"
-            >
-              <CategoryIcon icon={category.icon} color={category.color} />
-              <span className="min-w-0 flex-1 truncate font-semibold">{category.name}</span>
-              <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden="true" />
-            </button>
-          ))}
-        </Card>
+      {list.length > 0 && <CategoryRows categories={list} onSelect={setEditing} />}
+
+      {archived.length > 0 && (
+        <section className="mt-8">
+          <button
+            type="button"
+            onClick={() => setShowArchived((v) => !v)}
+            aria-expanded={showArchived}
+            className="text-sm font-bold text-muted hover:text-ink"
+          >
+            {showArchived ? "Esconder" : "Mostrar"} categorias arquivadas ({archived.length})
+          </button>
+          {showArchived && (
+            <div className="mt-3 opacity-80">
+              <CategoryRows categories={archived} onSelect={setEditing} label="Categorias arquivadas" />
+            </div>
+          )}
+        </section>
       )}
 
       {household && (
@@ -86,5 +94,32 @@ export function CategoriesPage() {
         />
       )}
     </>
+  );
+}
+
+function CategoryRows({
+  categories,
+  onSelect,
+  label,
+}: {
+  categories: Category[];
+  onSelect: (category: Category) => void;
+  label?: string;
+}) {
+  return (
+    <Card className="divide-y divide-line overflow-hidden" role={label ? "group" : undefined} aria-label={label}>
+      {categories.map((category) => (
+        <button
+          key={category.id}
+          type="button"
+          onClick={() => onSelect(category)}
+          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-surface-2/60"
+        >
+          <CategoryIcon icon={category.icon} color={category.color} />
+          <span className="min-w-0 flex-1 truncate font-semibold">{category.name}</span>
+          <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden="true" />
+        </button>
+      ))}
+    </Card>
   );
 }
