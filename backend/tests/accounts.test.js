@@ -89,6 +89,43 @@ describe("Contas — CRUD", () => {
     expect(res.body.error.code).toBe("RESOURCE_IN_USE");
     expect(res.body.error.message).toContain("is_active");
   });
+
+  it("cartão de crédito: compras deixam o saldo negativo e o pagamento da fatura zera", async () => {
+    const corrente = await createAccount(maria, { name: "Corrente", initial_balance: 2000 });
+    const card = await request(app)
+      .post(`${maria.base}/accounts`)
+      .set(maria.authHeader)
+      .send({ name: "Cartão Nubank", type: "credit_card", initial_balance: -100 });
+    expect(card.status).toBe(201);
+    expect(card.body).toMatchObject({ type: "credit_card", current_balance: -100 });
+
+    const category = await createCategory(maria);
+    await createTransaction(maria, {
+      type: "expense",
+      description: "Mercado no cartão",
+      payment_date: "2026-11-06",
+      amount: 300,
+      account_id: card.body.id,
+      category_id: category.id,
+    });
+
+    let get = await request(app).get(`${maria.base}/accounts/${card.body.id}`).set(maria.authHeader);
+    expect(get.body.current_balance).toBe(-400);
+
+    await createTransaction(maria, {
+      type: "transfer",
+      description: "Pagamento da fatura",
+      payment_date: "2026-11-10",
+      amount: 400,
+      account_id: corrente.id,
+      destination_account_id: card.body.id,
+    });
+
+    get = await request(app).get(`${maria.base}/accounts/${card.body.id}`).set(maria.authHeader);
+    expect(get.body.current_balance).toBe(0);
+    const source = await request(app).get(`${maria.base}/accounts/${corrente.id}`).set(maria.authHeader);
+    expect(source.body.current_balance).toBe(1600);
+  });
 });
 
 describe("Contas — validação", () => {

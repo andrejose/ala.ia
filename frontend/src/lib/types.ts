@@ -1,7 +1,7 @@
 // Tipos das respostas da API (ver /docs no backend)
 
 export type Role = "owner" | "member";
-export type AccountType = "checking" | "savings" | "investment" | "cash";
+export type AccountType = "checking" | "savings" | "investment" | "cash" | "credit_card";
 export type TransactionType = "income" | "expense" | "transfer";
 export type CategoryType = "income" | "expense";
 

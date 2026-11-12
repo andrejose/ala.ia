@@ -37,29 +37,13 @@ Modelo proposto:
 - Os relatórios (`report_by_category`) passam a somar as partes no lugar do lançamento pai quando houver divisão.
 - No formulário: botão "Dividir em categorias", com linhas de categoria e valor e o quanto falta distribuir.
 
-### Decisão: começar pelo tipo de conta cartão de crédito
+### Cartão de crédito em vez do rateio (já entregue)
 
-Avaliadas as duas opções, a escolha é implementar primeiro um tipo de conta **cartão de crédito** e deixar o rateio para depois, só se o uso real pedir.
+O caso da fatura foi resolvido com o tipo de conta **cartão de crédito**. Cada compra é uma despesa no cartão, com a sua categoria, e o pagamento da fatura é uma transferência da corrente para o cartão. O rateio fica para depois, só se o uso real pedir.
 
-Como funciona: o cartão é uma conta cujo saldo representa uma dívida. Cada compra é uma **despesa** lançada no cartão com a sua categoria; o pagamento da fatura é uma **transferência** da conta corrente para o cartão.
+Ainda dá para evoluir o cartão com limite e dias de fechamento/vencimento. Sem eles, o app mostra o total devido no cartão, não a fatura de cada mês.
 
-| Situação | Lançamento | Saldo do cartão |
-|---|---|---|
-| Mercado, R$ 400,00 | Despesa no Cartão, categoria Mercado | −400,00 |
-| Roupas, R$ 350,00 | Despesa no Cartão, categoria Roupas | −750,00 |
-| iFood, R$ 250,00 | Despesa no Cartão, categoria Alimentação | −1.000,00 (fatura em aberto) |
-| Pagamento da fatura | Transferência Corrente → Cartão, R$ 1.000,00 | 0,00 |
-
-Por que resolve o caso da fatura sem rateio: as compras já entram categorizadas, e transferências não têm categoria (`transactions_type_chk`), então o pagamento não aparece em `report_by_category` e nada é contado duas vezes.
-
-O que muda:
-
-- **Banco:** migration nova com `ALTER TYPE account_type ADD VALUE 'credit_card'` (só acrescenta; nada da v1.0 muda).
-- **Backend:** novo valor no enum de `schemas/accounts.schemas.js` e em `docs/components.js`.
-- **Frontend:** novo tipo em `lib/types.ts` e `accountTypes.ts`; saldo negativo exibido como "Fatura em aberto"; botão "Pagar fatura" que abre a transferência já preenchida.
-- **Depois (opcional):** limite e dias de fechamento/vencimento. Sem eles, o app mostra o total devido no cartão, não a fatura de cada mês.
-
-Limitações conhecidas:
+Limitações do cartão que o rateio ou outras melhorias resolveriam:
 
 - **Compra única com várias categorias fora do cartão** (ex.: nota de mercado paga no Pix com comida e limpeza) continua precisando do rateio.
 - **Parcelamento:** exige lançar as parcelas futuras ou a compra inteira; pode ser resolvido junto com os lançamentos recorrentes.

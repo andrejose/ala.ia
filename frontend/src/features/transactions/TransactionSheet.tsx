@@ -15,8 +15,16 @@ import { useHousehold } from "../household/HouseholdProvider";
 // Abre o formulário de lançamento de qualquer lugar (botão "+", listas...)
 // =============================================================================
 
+// Valores já preenchidos num lançamento novo (ex.: "Pagar fatura" do cartão)
+export interface TransactionPrefill {
+  description?: string;
+  amount?: number;
+  account_id?: string;
+  destination_account_id?: string;
+}
+
 interface TransactionSheetContextValue {
-  openNew: (type?: TransactionType) => void;
+  openNew: (type?: TransactionType, prefill?: TransactionPrefill) => void;
   openEdit: (transaction: Transaction) => void;
 }
 
@@ -24,9 +32,17 @@ const TransactionSheetContext = createContext<TransactionSheetContextValue | nul
 
 export function TransactionSheetProvider({ children }: { children: ReactNode }) {
   const { household } = useHousehold();
-  const [state, setState] = useState<{ transaction?: Transaction; type: TransactionType; nonce: number } | null>(null);
+  const [state, setState] = useState<{
+    transaction?: Transaction;
+    prefill?: TransactionPrefill;
+    type: TransactionType;
+    nonce: number;
+  } | null>(null);
 
-  const openNew = useCallback((type: TransactionType = "expense") => setState({ type, nonce: Date.now() }), []);
+  const openNew = useCallback(
+    (type: TransactionType = "expense", prefill?: TransactionPrefill) => setState({ type, prefill, nonce: Date.now() }),
+    []
+  );
   const openEdit = useCallback(
     (transaction: Transaction) => setState({ transaction, type: transaction.type, nonce: Date.now() }),
     []
@@ -44,6 +60,7 @@ export function TransactionSheetProvider({ children }: { children: ReactNode }) 
               key={state.nonce}
               householdId={household.id}
               transaction={state.transaction}
+              prefill={state.prefill}
               initialType={state.type}
               onDone={close}
             />
@@ -90,11 +107,13 @@ interface TransactionInput {
 function TransactionForm({
   householdId,
   transaction,
+  prefill,
   initialType,
   onDone,
 }: {
   householdId: string;
   transaction?: Transaction;
+  prefill?: TransactionPrefill;
   initialType: TransactionType;
   onDone: () => void;
 }) {
@@ -103,10 +122,13 @@ function TransactionForm({
   const activeAccounts = (accounts.data ?? []).filter((a) => a.is_active || a.id === transaction?.account_id || a.id === transaction?.destination_account_id);
 
   const [type, setType] = useState<TransactionType>(initialType);
-  const [amount, setAmount] = useState(transaction ? moneyToInput(transaction.amount) : "");
-  const [description, setDescription] = useState(transaction?.description ?? "");
-  const [accountId, setAccountId] = useState(transaction?.account_id ?? "");
-  const [destinationId, setDestinationId] = useState(transaction?.destination_account_id ?? "");
+  const initialAmount = transaction?.amount ?? prefill?.amount;
+  const [amount, setAmount] = useState(initialAmount ? moneyToInput(initialAmount) : "");
+  const [description, setDescription] = useState(transaction?.description ?? prefill?.description ?? "");
+  const [accountId, setAccountId] = useState(transaction?.account_id ?? prefill?.account_id ?? "");
+  const [destinationId, setDestinationId] = useState(
+    transaction?.destination_account_id ?? prefill?.destination_account_id ?? ""
+  );
   const [categoryId, setCategoryId] = useState(transaction?.category_id ?? "");
   const [dueDate, setDueDate] = useState(transaction?.due_date ?? today());
   const [paid, setPaid] = useState(transaction ? transaction.payment_date !== null : true);

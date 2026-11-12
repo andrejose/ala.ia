@@ -6,7 +6,7 @@ import { api } from "../../lib/api";
 import { moneyToInput, parseMoney } from "../../lib/money";
 import { errorMessage, fieldErrors, useHouseholdMutation } from "../../lib/mutations";
 import type { Account, AccountType } from "../../lib/types";
-import { accountTypes } from "./accountTypes";
+import { accountTypes, isCreditCard } from "./accountTypes";
 
 interface AccountInput {
   name: string;
@@ -38,7 +38,11 @@ export function AccountSheet({
 function AccountForm({ householdId, account, onDone }: { householdId: string; account?: Account; onDone: () => void }) {
   const [name, setName] = useState(account?.name ?? "");
   const [type, setType] = useState<AccountType>(account?.type ?? "checking");
-  const [balance, setBalance] = useState(account ? moneyToInput(account.initial_balance) : "");
+  // No cartão, o campo pede a dívida (positiva) e grava como saldo negativo
+  const [balance, setBalance] = useState(
+    account ? moneyToInput(isCreditCard(account) ? -account.initial_balance : account.initial_balance) : ""
+  );
+  const card = type === "credit_card";
   const [balanceError, setBalanceError] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -67,7 +71,7 @@ function AccountForm({ householdId, account, onDone }: { householdId: string; ac
       return;
     }
     setBalanceError(undefined);
-    save.mutate({ name, type, initial_balance: initial }, { onSuccess: onDone });
+    save.mutate({ name, type, initial_balance: card && initial !== 0 ? -initial : initial }, { onSuccess: onDone });
   }
 
   const busy = save.isPending || archive.isPending || remove.isPending;
@@ -94,11 +98,15 @@ function AccountForm({ householdId, account, onDone }: { householdId: string; ac
       </SelectField>
       <MoneyField
         id="account-balance"
-        label="Saldo inicial"
+        label={card ? "Fatura em aberto no início" : "Saldo inicial"}
         value={balance}
         onChange={setBalance}
         error={balanceError ?? errors.initial_balance}
-        hint="Quanto havia na conta quando você começou a usar o Ala.ia. Pode ser negativo."
+        hint={
+          card
+            ? "Quanto você já devia no cartão quando começou a usar o Ala.ia. Depois, lance cada compra como despesa neste cartão."
+            : "Quanto havia na conta quando você começou a usar o Ala.ia. Pode ser negativo."
+        }
       />
 
       {error && <FormError>{error}</FormError>}
