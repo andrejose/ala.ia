@@ -223,6 +223,55 @@ export const components = {
       },
     },
 
+    ImportPreview: {
+      type: "object",
+      properties: {
+        source: {
+          type: "object",
+          properties: {
+            id: { type: "string", example: "bb-csv" },
+            label: { type: "string", example: "Banco do Brasil (CSV)" },
+            kind: { type: "string", enum: ["checking", "credit_card"], description: "Extrato de conta ou fatura de cartão" },
+          },
+        },
+        account: {
+          type: "object",
+          properties: { id: { type: "string", format: "uuid" }, name: { type: "string" }, type: { type: "string" }, is_active: { type: "boolean" } },
+        },
+        kind_mismatch: { type: "boolean", description: "true = fatura de cartão numa conta que não é cartão (ou o contrário)" },
+        summary: {
+          type: "object",
+          properties: { total: { type: "integer" }, new: { type: "integer" }, imported: { type: "integer" }, similar: { type: "integer" } },
+        },
+        rows: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              line: { type: "integer", description: "Linha no arquivo" },
+              import_hash: { type: "string", description: "Identificador da linha, para enviar na gravação" },
+              date: { type: "string", format: "date" },
+              description: { type: "string", example: "Pix - Enviado · PIZZARIA NAPOLITANA" },
+              amount: { type: "number", example: 66 },
+              type: { type: "string", enum: ["income", "expense"] },
+              category_id: { type: "string", format: "uuid", nullable: true, description: "Categoria sugerida" },
+              status: { type: "string", enum: ["new", "imported", "similar"] },
+              selected: { type: "boolean", description: "Se a linha vem marcada para importar" },
+              note: { type: "string", nullable: true, description: "Por que a linha veio desmarcada" },
+            },
+          },
+        },
+      },
+    },
+
+    ImportResult: {
+      type: "object",
+      properties: {
+        imported: { type: "integer", example: 30 },
+        skipped: { type: "integer", example: 0, description: "Linhas que já estavam importadas" },
+      },
+    },
+
     ReportMonthly: {
       type: "object",
       properties: {

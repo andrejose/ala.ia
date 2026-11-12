@@ -1,0 +1,11 @@
+Extrato de conta corrente
+Cliente;Pessoa Exemplo
+Agência;0001
+Conta;00.000000.0
+Período do extrato;01/11/2026 a 12/11/2026
+
+Lançamentos:
+Data;Descrição;Detalhe;Valor;Saldo
+09/11/2026;Remuneracao aplicacao automatica;;R$ 0,03;R$ 1.000,03
+03/11/2026;Pix enviado;Pet Shop Exemplo;-R$ 2.800,00;R$ 1.000,00
+01/11/2026;Liquido de vencimento;Cnpj 00000000000100;R$ 3.800,00;R$ 3.800,00

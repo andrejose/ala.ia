@@ -135,13 +135,16 @@ export async function request<T>(path: string, options: RequestOptions = {}, ret
     if (value !== undefined && value !== "") url.searchParams.set(key, String(value));
   }
 
+  // Arquivo (ex.: extrato na importação) vai cru; o resto vai como JSON
+  const isFile = body instanceof Blob;
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (isFile) headers["Content-Type"] = body.type || "text/csv";
+  else if (body !== undefined) headers["Content-Type"] = "application/json";
   if (auth && accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
   let response: Response;
   try {
-    response = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    response = await fetch(url, { method, headers, body: isFile ? body : body === undefined ? undefined : JSON.stringify(body) });
   } catch {
     throw new ApiError(0, null);
   }
@@ -162,6 +165,7 @@ export async function request<T>(path: string, options: RequestOptions = {}, ret
 export const api = {
   get: <T>(path: string, query?: RequestOptions["query"]) => request<T>(path, { query }),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body }),
+  upload: <T>(path: string, file: Blob, query?: RequestOptions["query"]) => request<T>(path, { method: "POST", body: file, query }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: "PATCH", body }),
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
 };

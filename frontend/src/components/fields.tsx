@@ -31,12 +31,21 @@ export function SelectField({
   label,
   error,
   hint,
+  hideLabel = false,
   children,
   ...props
-}: SelectHTMLAttributes<HTMLSelectElement> & { id: string; label: string; error?: string; hint?: string; children: ReactNode }) {
+}: SelectHTMLAttributes<HTMLSelectElement> & {
+  id: string;
+  label: string;
+  error?: string;
+  hint?: string;
+  /** Rótulo só para leitores de tela (ex.: um seletor por linha de uma lista) */
+  hideLabel?: boolean;
+  children: ReactNode;
+}) {
   return (
     <label htmlFor={id} className="block">
-      <span className="mb-1.5 block text-sm font-bold">{label}</span>
+      <span className={hideLabel ? "sr-only" : "mb-1.5 block text-sm font-bold"}>{label}</span>
       <span className="relative block">
         <select
           id={id}

@@ -28,6 +28,7 @@ export const openApiSpec = {
     { name: "Categorias", description: "Categorias de receitas e despesas" },
     { name: "Lançamentos", description: "Receitas, despesas e transferências" },
     { name: "Relatórios", description: "Resumo do mês, gastos por categoria e comparação mês a mês" },
+    { name: "Importação", description: "Importação de extratos bancários e faturas de cartão (CSV)" },
   ],
   // Por padrão toda rota exige o token; rotas públicas declaram "security: []"
   security: [{ bearerAuth: [] }],

@@ -3,27 +3,17 @@
 Ideias registradas para depois da versão 1.0 (entrega da disciplina). Nada aqui está implementado: o que for entregue sai desta lista.
 A ordem das seções não é de prioridade.
 
-## 1. Importação de extratos bancários
+## 1. Importação de extratos bancários: próximos formatos
 
-Cadastrar lançamentos em lote a partir do extrato do banco, em vez de digitar um por um.
+A importação em CSV já está entregue para o extrato do Banco do Brasil, o do Santander e a fatura do cartão Nubank, com prévia, categoria sugerida e proteção contra duplicatas (ver README). Cada banco tem um leitor em `backend/src/imports/parsers/`, e todos devolvem o mesmo formato. Para aceitar um banco novo, basta criar o arquivo dele e incluí-lo na lista de `parsers/index.js`, com um teste usando um extrato fictício no mesmo formato.
 
-**Formatos:** CSV, XLSX e PDF. **Bancos prioritários:** Banco do Brasil, Santander e Nubank.
+Falta:
 
-Fluxo proposto:
-
-1. A pessoa escolhe a conta de destino e envia o arquivo.
-2. A API identifica o banco e o formato e extrai data, descrição e valor de cada linha.
-3. O frontend mostra uma **prévia** antes de gravar: cada linha com a categoria sugerida, marcação das prováveis duplicatas e opção de desmarcar.
-4. Ao confirmar, a API grava tudo de uma vez (uma transação no banco: ou entra tudo, ou nada).
-
-Pontos de atenção:
-
-- **Um leitor por banco e formato** (ex.: `parsers/nubank-csv.js`, `parsers/bb-pdf.js`), todos devolvendo o mesmo formato intermediário. Assim, um banco novo é só um leitor novo.
-- **Começar pelo CSV.** É o formato mais estável (o Nubank exporta CSV direto no app). XLSX é parecido (biblioteca `exceljs`). **PDF é o mais frágil**: o layout muda sem aviso e cada banco é diferente; extrair texto com `pdfjs-dist` e montar regras por banco, com testes usando extratos de exemplo anonimizados.
-- **Vale considerar OFX:** Banco do Brasil e Santander exportam OFX, um formato padronizado e bem mais confiável que PDF.
-- **Duplicatas:** guardar um identificador da linha importada (o `FITID` do OFX ou um hash de conta + data + valor + descrição) em uma coluna nova, com índice único por conta. Reimportar o mesmo extrato não duplica nada.
-- **Categorização automática:** regras do tipo "descrição contém IFOOD → Alimentação", aprendidas a partir das categorias que a pessoa escolhe na prévia.
-- **Segurança e privacidade:** o arquivo é processado em memória e descartado, com limite de tamanho e de linhas. Extratos são dados sensíveis e não devem ficar guardados.
+- **Fatura do cartão Santander:** ainda não há um arquivo de exemplo. Com o CSV (ou o PDF) em mãos, é um leitor novo.
+- **PDF:** é o formato mais frágil, porque o layout muda sem aviso e cada banco é diferente. A ideia é extrair o texto com `pdfjs-dist`, montar regras por banco e testar com extratos de exemplo anonimizados. Já há PDFs de exemplo do BB, do Santander e do Nubank.
+- **XLSX** (biblioteca `exceljs`) e **OFX**: Banco do Brasil e Santander exportam OFX, um formato padronizado e bem mais confiável que PDF. O `FITID` do OFX pode servir de `import_hash`.
+- **Extrato da conta Nubank** (não a fatura): outro CSV, com o cabeçalho `Data,Valor,Identificador,Descrição`.
+- **Regras de categoria explícitas:** hoje a sugestão vem da categoria usada mais recentemente numa descrição parecida. Regras do tipo "contém IFOOD → Alimentação", editáveis, dariam mais controle.
 
 ## 2. Lançamento com subdivisão (rateio)
 

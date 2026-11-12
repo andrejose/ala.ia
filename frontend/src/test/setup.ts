@@ -1,8 +1,12 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { setSession } from "../lib/api";
 import { resetDb, server } from "./server";
+
+// Os testes montam o app inteiro; com a máquina ocupada (ex.: CI), 1 s de espera
+// do findBy às vezes não basta e o teste falha sem motivo real.
+configure({ asyncUtilTimeout: 3000 });
 
 // O jsdom não implementa showModal/close do <dialog> (usado pelo Sheet).
 // Este polyfill só liga e desliga o atributo "open" e dispara o evento "close".

@@ -9,6 +9,7 @@ import { CategoriesPage } from "../features/categories/CategoriesPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { HouseholdPage } from "../features/household/HouseholdPage";
 import { HouseholdProvider } from "../features/household/HouseholdProvider";
+import { ImportPage } from "../features/imports/ImportPage";
 import { MorePage } from "../features/more/MorePage";
 import { ReportsPage } from "../features/reports/ReportsPage";
 import { TransactionsPage } from "../features/transactions/TransactionsPage";
@@ -63,6 +64,7 @@ export const routes: RouteObject[] = [
             children: [
               { index: true, element: <DashboardPage /> },
               { path: "lancamentos", element: <TransactionsPage /> },
+              { path: "importar", element: <ImportPage /> },
               { path: "relatorios", element: <ReportsPage /> },
               { path: "contas", element: <AccountsPage /> },
               { path: "categorias", element: <CategoriesPage /> },

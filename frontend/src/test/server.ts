@@ -5,6 +5,7 @@ import type {
   AuthResponse,
   Category,
   Household,
+  ImportPreview,
   Invitation,
   Me,
   Member,
@@ -70,7 +71,12 @@ function initialDb() {
       invitations: [] as unknown[],
       categories: [] as unknown[],
       accounts: [] as unknown[],
+      imports: [] as unknown[],
+      // Arquivos enviados para a prévia: { account_id, text }
+      importFiles: [] as unknown[],
     },
+    // Resposta da prévia da importação (cada teste monta a sua)
+    importPreview: null as Omit<ImportPreview, "account"> | null,
   };
 }
 
@@ -208,6 +214,18 @@ const handlers = [
     const from = params.get("from") ?? "";
     const to = params.get("to") ?? "";
     return HttpResponse.json({ from, to, months: monthsBetween(from, to).map(monthReport) });
+  }),
+  http.post("*/api/households/:id/imports/preview", async ({ request }) => {
+    const accountId = new URL(request.url).searchParams.get("account_id");
+    db.requests.importFiles.push({ account_id: accountId, text: await request.text() });
+    const account = db.accounts.find((a) => a.id === accountId);
+    if (!account || !db.importPreview) return apiError(400, "UNSUPPORTED_FORMAT", "Não reconheci este arquivo.");
+    return HttpResponse.json({ ...db.importPreview, account: { id: account.id, name: account.name, type: account.type, is_active: true } });
+  }),
+  http.post("*/api/households/:id/imports", async ({ request }) => {
+    const body = (await request.json()) as { rows: unknown[] };
+    db.requests.imports.push(body);
+    return HttpResponse.json({ imported: body.rows.length, skipped: 0 }, { status: 201 });
   }),
   http.get("*/api/households/:id/members", () => HttpResponse.json(db.members)),
   http.get("*/api/households/:id/invitations", () => HttpResponse.json(db.invitations)),

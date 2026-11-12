@@ -8,7 +8,8 @@ import { routes } from "./routes/index.js";
 export const app = express();
 
 app.disable("x-powered-by");
-app.use(express.json());
+// 1 MB cabe uma importação de extrato inteira (até 1.000 linhas)
+app.use(express.json({ limit: "1mb" }));
 
 // Documentação
 app.get("/docs.json", (req, res) => res.json(openApiSpec));
