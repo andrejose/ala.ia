@@ -249,7 +249,7 @@ function SpendingByCategory({ householdId }: { householdId: string }) {
 
   return (
     <section aria-labelledby="spending-title">
-      <SectionTitle>
+      <SectionTitle action={<LinkMore to="/relatorios">Relatórios</LinkMore>}>
         <span id="spending-title">Para onde foi o dinheiro</span>
       </SectionTitle>
       <Card className="space-y-4 p-5">

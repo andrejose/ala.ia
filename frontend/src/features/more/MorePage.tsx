@@ -1,4 +1,4 @@
-import { ChevronRight, LogOut, Tags, Users } from "lucide-react";
+import { ChartPie, ChevronRight, LogOut, Tags, Users } from "lucide-react";
 import { Link } from "react-router";
 import { PageHeader } from "../../components/PageHeader";
 import { ThemeToggle } from "../../components/ThemeToggle";
@@ -29,6 +29,11 @@ export function MorePage() {
             <span id="more-title">Mais</span>
           </SectionTitle>
           <Card className="divide-y divide-line overflow-hidden">
+            <Link to="/relatorios" className="flex items-center gap-3 px-4 py-4 font-semibold transition hover:bg-surface-2/60">
+              <ChartPie className="size-5 text-primary" aria-hidden="true" />
+              <span className="flex-1">Relatórios</span>
+              <ChevronRight className="size-4 text-muted" aria-hidden="true" />
+            </Link>
             <Link to="/espaco" className="flex items-center gap-3 px-4 py-4 font-semibold transition hover:bg-surface-2/60">
               <Users className="size-5 text-primary" aria-hidden="true" />
               <span className="flex-1">Espaço e convites</span>

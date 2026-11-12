@@ -1,6 +1,6 @@
 import { createAccountSchema, listAccountsQuery, updateAccountSchema } from "../../schemas/accounts.schemas.js";
 import { createCategorySchema, listCategoriesQuery, updateCategorySchema } from "../../schemas/categories.schemas.js";
-import { byCategoryQuery, summaryQuery } from "../../schemas/reports.schemas.js";
+import { byCategoryQuery, MAX_SERIES_MONTHS, monthlyQueryFields, summaryQuery } from "../../schemas/reports.schemas.js";
 import {
   createTransactionSchema,
   listTransactionsQuery,
@@ -187,6 +187,19 @@ export const financePaths = {
       description: "Ordenado do maior para o menor total. O mês considerado é o do vencimento (`due_date`).",
       parameters: queryParams(byCategoryQuery),
       responses: { 200: json("Totais por categoria.", ref("ReportByCategory")), 400: badRequest, 401: unauthorized, 404: notFound },
+    },
+  },
+
+  "/households/{householdId}/reports/monthly": {
+    parameters: [householdIdParam],
+    get: {
+      tags: ["Relatórios"],
+      summary: "Resumo mês a mês",
+      description:
+        "O resumo de cada mês do intervalo, do mais antigo para o mais recente, inclusive os meses sem " +
+        `lançamentos (zerados). Padrão: os últimos 6 meses. No máximo ${MAX_SERIES_MONTHS} meses.`,
+      parameters: queryParams(monthlyQueryFields),
+      responses: { 200: json("Meses do intervalo.", ref("ReportMonthly")), 400: badRequest, 401: unauthorized, 404: notFound },
     },
   },
 };

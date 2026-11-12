@@ -1,6 +1,18 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { api } from "./api";
-import type { Account, Category, Invitation, Me, Member, MyInvitation, ReportByCategory, ReportSummary, TransactionList } from "./types";
+import type {
+  Account,
+  Category,
+  CategoryType,
+  Invitation,
+  Me,
+  Member,
+  MyInvitation,
+  ReportByCategory,
+  ReportMonthly,
+  ReportSummary,
+  TransactionList,
+} from "./types";
 
 // Consultas à API com cache (TanStack Query). As chaves começam pelo
 // household, para a troca de household recarregar tudo dele.
@@ -70,12 +82,26 @@ export function useMonthSummary(householdId: string | undefined, month = current
   });
 }
 
-export function useSpendingByCategory(householdId: string | undefined, month = currentMonth()) {
+export function useSpendingByCategory(
+  householdId: string | undefined,
+  month = currentMonth(),
+  type: CategoryType = "expense"
+) {
   return useQuery({
-    queryKey: ["households", householdId, "reports", "by-category", month],
-    queryFn: () =>
-      api.get<ReportByCategory>(`/households/${householdId}/reports/by-category`, { month, type: "expense" }),
+    queryKey: ["households", householdId, "reports", "by-category", month, type],
+    queryFn: () => api.get<ReportByCategory>(`/households/${householdId}/reports/by-category`, { month, type }),
     enabled: !!householdId,
+  });
+}
+
+// Resumo de cada mês, de `from` a `to` (YYYY-MM)
+export function useMonthlySeries(householdId: string | undefined, from: string, to: string) {
+  return useQuery({
+    queryKey: ["households", householdId, "reports", "monthly", from, to],
+    queryFn: () => api.get<ReportMonthly>(`/households/${householdId}/reports/monthly`, { from, to }),
+    enabled: !!householdId,
+    // Ao trocar de mês, mantém o gráfico anterior até o novo chegar (sem piscar)
+    placeholderData: keepPreviousData,
   });
 }
 

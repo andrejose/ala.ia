@@ -223,6 +223,18 @@ export const components = {
       },
     },
 
+    ReportMonthly: {
+      type: "object",
+      properties: {
+        from: { type: "string", example: "2026-06" },
+        to: { type: "string", example: "2026-11" },
+        months: {
+          type: "array",
+          items: { $ref: "#/components/schemas/ReportSummary" },
+        },
+      },
+    },
+
     PaidPendingTotal: {
       type: "object",
       properties: {

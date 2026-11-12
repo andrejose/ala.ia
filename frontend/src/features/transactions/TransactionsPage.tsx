@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { SelectField } from "../../components/fields";
+import { MonthSwitcher } from "../../components/MonthSwitcher";
 import { PageHeader } from "../../components/PageHeader";
 import { Button, Card } from "../../components/ui";
 import { api } from "../../lib/api";
@@ -12,12 +13,6 @@ import type { Account, Category, Transaction } from "../../lib/types";
 import { useHousehold } from "../household/HouseholdProvider";
 import { TransactionRow } from "./TransactionRow";
 import { useTransactionSheet } from "./TransactionSheet";
-
-function shiftMonth(yearMonth: string, delta: number) {
-  const [year, month] = yearMonth.split("-").map(Number);
-  const date = new Date(year, month - 1 + delta, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
 
 function monthRange(yearMonth: string) {
   const [year, month] = yearMonth.split("-").map(Number);
@@ -90,26 +85,8 @@ export function TransactionsPage() {
       />
 
       {/* Mês */}
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => setMonth((m) => shiftMonth(m, -1))}
-          aria-label="Mês anterior"
-          className="grid size-10 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"
-        >
-          <ChevronLeft className="size-5" aria-hidden="true" />
-        </button>
-        <h2 className="font-display text-xl font-semibold" aria-live="polite">
-          {formatMonth(month)}
-        </h2>
-        <button
-          type="button"
-          onClick={() => setMonth((m) => shiftMonth(m, 1))}
-          aria-label="Próximo mês"
-          className="grid size-10 place-items-center rounded-full text-muted transition hover:bg-surface-2 hover:text-ink"
-        >
-          <ChevronRight className="size-5" aria-hidden="true" />
-        </button>
+      <div className="mb-4">
+        <MonthSwitcher month={month} onChange={setMonth} />
       </div>
 
       {/* Filtros */}

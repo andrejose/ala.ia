@@ -17,7 +17,7 @@ import {
   updateHouseholdSchema,
   updateMemberSchema,
 } from "../schemas/households.schemas.js";
-import { byCategoryQuery, summaryQuery } from "../schemas/reports.schemas.js";
+import { byCategoryQuery, monthlyQuery, summaryQuery } from "../schemas/reports.schemas.js";
 import {
   createTransactionSchema,
   listTransactionsQuery,
@@ -89,3 +89,4 @@ household.delete("/transactions/:id", validate({ params: idParams }), transactio
 // Relatórios
 household.get("/reports/summary", validate({ query: summaryQuery }), reports.summary);
 household.get("/reports/by-category", validate({ query: byCategoryQuery }), reports.byCategory);
+household.get("/reports/monthly", validate({ query: monthlyQuery }), reports.monthly);
