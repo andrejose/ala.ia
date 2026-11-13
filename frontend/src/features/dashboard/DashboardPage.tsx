@@ -13,6 +13,7 @@ import { firstName, formatMonth, greeting, monthName } from "../../lib/format";
 import {
   currentMonth,
   useAccounts,
+  useBudgets,
   useCategories,
   useMonthSummary,
   useRecentTransactions,
@@ -20,6 +21,7 @@ import {
 } from "../../lib/queries";
 import type { Account, Category, ReportSummary, Transaction } from "../../lib/types";
 import { accountTypes, balanceDisplay } from "../accounts/accountTypes";
+import { BudgetBar } from "../budgets/BudgetBar";
 import { useHousehold } from "../household/HouseholdProvider";
 import { ReceivedInvitations } from "../household/ReceivedInvitations";
 import { TransactionRow } from "../transactions/TransactionRow";
@@ -44,6 +46,7 @@ export function DashboardPage() {
         </div>
         <div className="min-w-0 space-y-6">
           <SpendingByCategory householdId={household.id} />
+          <BudgetSummary householdId={household.id} />
           <AccountsList householdId={household.id} />
         </div>
       </div>
@@ -238,6 +241,27 @@ function SummaryTile({
         </p>
       )}
     </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Orçamento do mês: as categorias mais perto do limite (só se houver limites)
+// ---------------------------------------------------------------------------
+function BudgetSummary({ householdId }: { householdId: string }) {
+  const { data } = useBudgets(householdId, currentMonth());
+  if (!data || data.budgets.length === 0) return null;
+
+  return (
+    <section aria-labelledby="budget-title">
+      <SectionTitle action={<LinkMore to="/orcamento">Orçamento</LinkMore>}>
+        <span id="budget-title">Orçamento do mês</span>
+      </SectionTitle>
+      <Card className="space-y-4 p-5">
+        {data.budgets.slice(0, 3).map((budget) => (
+          <BudgetBar key={budget.category_id} budget={budget} compact />
+        ))}
+      </Card>
+    </section>
   );
 }
 

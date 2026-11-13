@@ -121,7 +121,7 @@ export function refreshSession(): Promise<AuthResponse | null> {
 // Requisições
 // ---------------------------------------------------------------------------
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
   auth?: boolean;
@@ -166,6 +166,7 @@ export const api = {
   get: <T>(path: string, query?: RequestOptions["query"]) => request<T>(path, { query }),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body }),
   upload: <T>(path: string, file: Blob, query?: RequestOptions["query"]) => request<T>(path, { method: "POST", body: file, query }),
+  put: <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: "PATCH", body }),
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
 };

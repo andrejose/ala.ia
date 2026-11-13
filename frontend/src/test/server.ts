@@ -58,6 +58,9 @@ function initialDb() {
     ] as Category[],
     transactions: [] as Transaction[],
     recurrences: [] as Recurrence[],
+    // Orçamento: limite por categoria e quanto foi gasto em cada mês ("YYYY-MM:categoria")
+    budgets: {} as Record<string, number>,
+    budgetSpent: {} as Record<string, { paid: number; pending: number }>,
     // Quantos lançamentos o "gerar recorrentes" diz ter criado
     materialized: 0,
     invitations: [] as Invitation[],
@@ -77,6 +80,7 @@ function initialDb() {
       accounts: [] as unknown[],
       imports: [] as unknown[],
       recurrences: [] as unknown[],
+      budgets: [] as unknown[],
       materialize: 0,
       // Arquivos enviados para a prévia: { account_id, text }
       importFiles: [] as unknown[],
@@ -233,6 +237,45 @@ const handlers = [
     db.requests.imports.push(body);
     return HttpResponse.json({ imported: body.rows.length, skipped: 0 }, { status: 201 });
   }),
+  // Orçamento
+  http.get("*/api/households/:id/budgets", ({ request }) => {
+    const month = new URL(request.url).searchParams.get("month") ?? "";
+    const budgets = Object.entries(db.budgets)
+      .map(([categoryId, amount]) => {
+        const category = db.categories.find((c) => c.id === categoryId)!;
+        const { paid = 0, pending = 0 } = db.budgetSpent[`${month}:${categoryId}`] ?? {};
+        const spent = paid + pending;
+        return {
+          category_id: categoryId,
+          name: category.name,
+          color: category.color,
+          icon: category.icon,
+          is_active: category.is_active,
+          amount,
+          spent,
+          paid,
+          pending,
+          remaining: amount - spent,
+          percent: Math.round((spent / amount) * 100),
+        };
+      })
+      .sort((a, b) => b.percent - a.percent);
+    const amount = budgets.reduce((sum, b) => sum + b.amount, 0);
+    const spent = budgets.reduce((sum, b) => sum + b.spent, 0);
+    return HttpResponse.json({ month, total: { amount, spent, remaining: amount - spent }, budgets });
+  }),
+  http.put("*/api/households/:id/budgets/:categoryId", async ({ request, params }) => {
+    const body = (await request.json()) as { amount: number };
+    db.requests.budgets.push({ category_id: params.categoryId, ...body });
+    db.budgets[String(params.categoryId)] = body.amount;
+    return HttpResponse.json({ category_id: params.categoryId, amount: body.amount });
+  }),
+  http.delete("*/api/households/:id/budgets/:categoryId", ({ params }) => {
+    db.requests.budgets.push({ deleted: params.categoryId });
+    delete db.budgets[String(params.categoryId)];
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   // Recorrentes
   http.post("*/api/households/:id/recurrences/materialize", () => {
     db.requests.materialize += 1;

@@ -1,5 +1,6 @@
 import express, { Router } from "express";
 import * as accounts from "../controllers/accounts.controller.js";
+import * as budgets from "../controllers/budgets.controller.js";
 import * as categories from "../controllers/categories.controller.js";
 import * as households from "../controllers/households.controller.js";
 import * as imports from "../controllers/imports.controller.js";
@@ -10,6 +11,7 @@ import * as transactions from "../controllers/transactions.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
 import { loadHousehold, requireOwner } from "../middlewares/household.js";
 import { validate } from "../middlewares/validate.js";
+import { budgetParams, upsertBudgetSchema } from "../schemas/budgets.schemas.js";
 import { createAccountSchema, listAccountsQuery, updateAccountSchema } from "../schemas/accounts.schemas.js";
 import { createCategorySchema, listCategoriesQuery, updateCategorySchema } from "../schemas/categories.schemas.js";
 import { householdParams, idParams, invitationIdParams, userIdParams } from "../schemas/common.schemas.js";
@@ -119,3 +121,8 @@ household.delete(
   validate({ params: idParams, query: deleteRecurrenceQuery }),
   recurrences.remove
 );
+
+// Orçamento por categoria
+household.get("/budgets", validate({ query: summaryQuery }), budgets.list);
+household.put("/budgets/:categoryId", validate({ params: budgetParams, body: upsertBudgetSchema }), budgets.upsert);
+household.delete("/budgets/:categoryId", validate({ params: budgetParams }), budgets.remove);

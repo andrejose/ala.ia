@@ -204,3 +204,24 @@ export interface Recurrence {
   is_active: boolean;
   generated_until: string | null;
 }
+
+// Orçamento do mês (GET /households/:id/budgets?month=YYYY-MM)
+export interface Budget {
+  category_id: string;
+  name: string;
+  color: string | null;
+  icon: string | null;
+  is_active: boolean;
+  amount: number;
+  spent: number;
+  paid: number;
+  pending: number;
+  remaining: number;
+  percent: number;
+}
+
+export interface BudgetList {
+  month: string;
+  total: { amount: number; spent: number; remaining: number };
+  budgets: Budget[];
+}
