@@ -4,6 +4,7 @@ import { nubankCardCsv } from "./nubank-card-csv.js";
 import { nubankCardPdf } from "./nubank-card-pdf.js";
 import { ofxBank, ofxCard } from "./ofx.js";
 import { santanderCsv } from "./santander-csv.js";
+import { santanderCardPdf } from "./santander-card-pdf.js";
 import { santanderPdf } from "./santander-pdf.js";
 
 // Um leitor por banco e formato, todos devolvendo o mesmo formato:
@@ -15,7 +16,7 @@ import { santanderPdf } from "./santander-pdf.js";
 // format "text": recebe { text } (CSV, OFX). format "pdf": recebe { text, lines },
 // com as linhas do PDF e a posição de cada célula (ver ../pdf.js).
 // Banco novo = um arquivo novo aqui e um item nesta lista.
-export const parsers = [bbCsv, santanderCsv, nubankCardCsv, ofxBank, ofxCard, bbPdf, santanderPdf, nubankCardPdf];
+export const parsers = [bbCsv, santanderCsv, nubankCardCsv, ofxBank, ofxCard, bbPdf, santanderPdf, santanderCardPdf, nubankCardPdf];
 
 export function detectParser(document) {
   return parsers.find((parser) => parser.format === document.format && parser.detect(document)) ?? null;

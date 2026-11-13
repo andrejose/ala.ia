@@ -121,3 +121,62 @@ export function nubankPdf({ invoice = "13 NOV 2026", rows } = {}) {
   cells.push({ x: 50, y: 120, text: "Nu Pagamentos S.A." });
   return buildPdf([cells]);
 }
+
+// Santander, fatura do cartão: resumo na primeira página e, na segunda, os
+// lançamentos em duas colunas, com a data no mesmo texto da descrição, dígitos
+// soltos antes da data (ícones da fatura), parcelas e um cartão adicional.
+export function santanderCardPdf({ closing = "30/10", due = "08/11/2026" } = {}) {
+  const left = (y, text, value, installment) => [
+    { x: 17, y: y - 2, text: "3" },
+    { x: 33, y, text },
+    ...(installment ? [{ x: 168, y, text: installment }] : []),
+    { x: 205, y, text: value },
+  ];
+  const right = (y, text, value, installment) => [
+    { x: 327, y, text },
+    ...(installment ? [{ x: 462, y, text: installment }] : []),
+    { x: 500, y, text: value },
+  ];
+  return buildPdf([
+    [
+      { x: 19, y: 785, text: "Olá, Pessoa! Esta é a fatura do seu cartão SANTANDER" },
+      { x: 19, y: 756, text: `realizados até ${closing}.` },
+      { x: 313, y: 761, text: "Total a Pagar" },
+      { x: 412, y: 761, text: "Vencimento" },
+      { x: 304, y: 748, text: "R$ 509,40" },
+      { x: 401, y: 748, text: due },
+      { x: 289, y: 637, text: "SET." },
+      { x: 503, y: 637, text: "04/08/26 a 31/08/26" },
+    ],
+    [
+      { x: 14, y: 537, text: "Detalhamento da Fatura" },
+      { x: 9, y: 517, text: "PESSOA EXEMPLO - 5228 XXXX XXXX 0001" },
+      { x: 10, y: 496, text: "Pagamento e Demais Créditos" },
+      ...left(472, "08/10 DEB AUTOM DE FATURA EM C/", "-1.000,00"),
+      { x: 10, y: 452, text: "Despesas" },
+      ...left(427, "02/10 MERCADO EXEMPLO", "61,16"),
+      ...left(416, "14/10 POSTO EXEMPLO LTDA", "237,25"),
+      ...left(404, "30/10 ANUIDADE DIFERENCIADA", "0,00", "04/12"),
+      { x: 34, y: 390, text: "VALOR TOTAL" },
+      { x: 203, y: 390, text: "298,41" },
+      { x: 9, y: 85, text: "@ PESSOA EXEMPLO - 5480 XXXX XXXX 0002" },
+      { x: 10, y: 64, text: "Parcelamentos" },
+      ...left(39, "30/08 LOJA PARCELADA", "9,99", "02/12"),
+      // Coluna da direita: continua os parcelamentos e depois as despesas do adicional
+      ...right(520, "23/09 PET EXEMPLO*OR1", "141,58", "02/03"),
+      { x: 310, y: 508, text: "2" },
+      ...right(508, "04/10 LOJA NOVA", "27,81", "01/02"),
+      { x: 303, y: 463, text: "Despesas" },
+      ...right(439, "30/09 MERCADOLIVRE*EXEMPLO", "22,90"),
+      { x: 327, y: 427, text: "18/10 ASAAS" },
+      { x: 371, y: 427, text: "*FOTO" },
+      { x: 499, y: 427, text: "9,51" },
+      { x: 328, y: 322, text: "VALOR TOTAL" },
+      { x: 497, y: 322, text: "211,80" },
+      { x: 534, y: 322, text: "0,00" },
+      { x: 303, y: 298, text: "Resumo da Fatura" },
+      { x: 326, y: 274, text: "Saldo Anterior" },
+      { x: 495, y: 274, text: "1.000,00" },
+    ],
+  ]);
+}

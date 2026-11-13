@@ -5,13 +5,13 @@ A ordem das seções não é de prioridade.
 
 ## 1. Importação de extratos bancários: próximos formatos
 
-A importação já está entregue em CSV e PDF para o extrato do Banco do Brasil, o do Santander e a fatura do cartão Nubank, e em OFX para qualquer banco, com prévia, categoria sugerida e proteção contra duplicatas (ver README). Cada banco tem um leitor em `backend/src/imports/parsers/`, e todos devolvem o mesmo formato. Para aceitar um banco novo, basta criar o arquivo dele e incluí-lo na lista de `parsers/index.js`, com um teste usando um extrato fictício no mesmo formato.
+A importação já está entregue em CSV e PDF para o extrato do Banco do Brasil, o do Santander e a fatura do cartão Nubank, em PDF para a fatura do cartão Santander, e em OFX para qualquer banco, com prévia, categoria sugerida e proteção contra duplicatas (ver README). Cada banco tem um leitor em `backend/src/imports/parsers/`, e todos devolvem o mesmo formato. Para aceitar um banco novo, basta criar o arquivo dele e incluí-lo na lista de `parsers/index.js`, com um teste usando um extrato fictício no mesmo formato.
 
 Falta:
 
-- **Fatura do cartão Santander:** ainda não há um arquivo de exemplo. Com o CSV ou o PDF em mãos, é um leitor novo. Se o Santander oferecer OFX da fatura, ele já funciona.
-- **PDF de outros bancos:** cada banco tem um layout, e o layout pode mudar sem aviso. Por isso cada PDF tem um leitor próprio (`bb-pdf.js`, `santander-pdf.js`, `nubank-card-pdf.js`), que trabalha pela posição de cada texto na página (`src/imports/pdf.js`). Se um PDF parar de ser reconhecido, o OFX ou o CSV do mesmo banco continuam funcionando.
+- **PDF de outros bancos:** cada banco tem um layout, e o layout pode mudar sem aviso. Por isso cada PDF tem um leitor próprio (`bb-pdf.js`, `santander-pdf.js`, `santander-card-pdf.js`, `nubank-card-pdf.js`), que trabalha pela posição de cada texto na página (`src/imports/pdf.js`). Se um PDF parar de ser reconhecido, o OFX ou o CSV do mesmo banco continuam funcionando.
 - **XLSX** (biblioteca `exceljs`).
+- **PDF com senha:** hoje o PDF precisa vir sem senha (no navegador, "Imprimir → Salvar como PDF" tira a senha). A tela de importação poderia pedir a senha e abrir o arquivo só em memória, sem guardá-la (o `pdfjs-dist` aceita a senha ao abrir).
 - **Extrato da conta Nubank** (não a fatura): outro CSV, com o cabeçalho `Data,Valor,Identificador,Descrição`.
 - **Regras de categoria explícitas:** hoje a sugestão vem da categoria usada mais recentemente numa descrição parecida. Regras do tipo "contém IFOOD → Alimentação", editáveis, dariam mais controle.
 

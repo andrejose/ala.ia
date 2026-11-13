@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 import { app } from "../src/app.js";
-import { bbPdf, nubankPdf, santanderPdf } from "./fixtures/extratos/pdfs.js";
+import { bbPdf, nubankPdf, santanderCardPdf, santanderPdf } from "./fixtures/extratos/pdfs.js";
 import { buildPdf } from "./helpers/pdf.js";
 import { createAccount, createCategory, createTestUser } from "./helpers/users.js";
 
@@ -111,6 +111,36 @@ describe("Importação de PDF", () => {
     const res = await preview(card.id, pdf);
 
     expect(res.body.rows.map((r) => r.date)).toEqual(["2026-12-28", "2027-01-02"]);
+  });
+
+  it("Santander, fatura do cartão: lê as duas colunas, cartões adicionais e parcelas", async () => {
+    const card = await createAccount(ana, { name: "Cartão Santander", type: "credit_card" });
+    const res = await preview(card.id, santanderCardPdf());
+
+    expect(res.status).toBe(200);
+    expect(res.body.source).toEqual({ id: "santander-card-pdf", label: "Fatura do cartão Santander (PDF)", kind: "credit_card" });
+    expect(pick(res.body.rows)).toEqual([
+      { date: "2026-10-08", description: "DEB AUTOM DE FATURA EM C/", amount: 1000, type: "income", selected: false },
+      { date: "2026-10-02", description: "MERCADO EXEMPLO", amount: 61.16, type: "expense", selected: true },
+      { date: "2026-10-14", description: "POSTO EXEMPLO LTDA", amount: 237.25, type: "expense", selected: true },
+      // Parcela 2 em diante entra na data do fechamento, com a parcela na descrição
+      { date: "2026-10-30", description: "LOJA PARCELADA - Parcela 02/12", amount: 9.99, type: "expense", selected: true },
+      { date: "2026-10-30", description: "PET EXEMPLO*OR1 - Parcela 02/03", amount: 141.58, type: "expense", selected: true },
+      { date: "2026-10-04", description: "LOJA NOVA - Parcela 01/02", amount: 27.81, type: "expense", selected: true },
+      { date: "2026-09-30", description: "MERCADOLIVRE*EXEMPLO", amount: 22.9, type: "expense", selected: true },
+      { date: "2026-10-18", description: "ASAAS *FOTO", amount: 9.51, type: "expense", selected: true },
+    ]);
+    // As despesas somam o total da fatura (anuidade zerada e linhas de total fora)
+    const spent = res.body.rows.filter((r) => r.type === "expense").reduce((sum, r) => sum + r.amount, 0);
+    expect(Math.round(spent * 100) / 100).toBe(510.2);
+  });
+
+  it("Santander, fatura do cartão: compra de dezembro na fatura que vence em janeiro", async () => {
+    const card = await createAccount(ana, { name: "Cartão Santander Virada", type: "credit_card" });
+    const res = await preview(card.id, santanderCardPdf({ closing: "30/12", due: "08/01/2027" }));
+
+    expect(res.body.rows.find((r) => r.description === "MERCADO EXEMPLO").date).toBe("2026-10-02");
+    expect(res.body.rows.find((r) => r.description.startsWith("PET EXEMPLO")).date).toBe("2026-12-30");
   });
 
   it("recusa PDF corrompido e PDF de outro banco (400)", async () => {
