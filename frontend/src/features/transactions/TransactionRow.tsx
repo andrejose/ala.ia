@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Check } from "lucide-react";
+import { ArrowLeftRight, Check, Repeat } from "lucide-react";
 import { CategoryIcon } from "../../components/CategoryIcon";
 import { Money } from "../../components/Money";
 import { Badge } from "../../components/ui";
@@ -38,7 +38,10 @@ export function TransactionRow({
           <CategoryIcon icon={category?.icon ?? null} color={category?.color ?? null} />
         )}
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-semibold">{tx.description}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="truncate font-semibold">{tx.description}</span>
+            {tx.recurrence_id && <Repeat className="size-3.5 shrink-0 text-muted" role="img" aria-label="Recorrente" />}
+          </span>
           <span className="block truncate text-sm text-muted">{subtitle}</span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-1">

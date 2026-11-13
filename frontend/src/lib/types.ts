@@ -73,6 +73,8 @@ export interface Transaction {
   category_id: string | null;
   due_date: string;
   payment_date: string | null;
+  /** Recorrência que gerou o lançamento (null = lançado à mão) */
+  recurrence_id?: string | null;
   user_id: string | null;
 }
 
@@ -183,4 +185,22 @@ export interface ImportPreview {
 export interface ImportResult {
   imported: number;
   skipped: number;
+}
+
+// Lançamento recorrente: a regra (GET /households/:id/recurrences)
+export interface Recurrence {
+  id: string;
+  household_id: string;
+  type: TransactionType;
+  description: string;
+  amount: number;
+  account_id: string;
+  destination_account_id: string | null;
+  category_id: string | null;
+  day_of_month: number;
+  start_month: string; // "YYYY-MM"
+  occurrences: number | null; // null = sem fim
+  auto_paid: boolean;
+  is_active: boolean;
+  generated_until: string | null;
 }

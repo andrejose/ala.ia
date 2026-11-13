@@ -1,4 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { api } from "../../lib/api";
 import { useMe } from "../../lib/queries";
 import type { Household, Me } from "../../lib/types";
 
@@ -41,6 +43,8 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     }
   }, [household]);
 
+  useMaterializeRecurrences(household?.id);
+
   const value = useMemo(
     () => ({ me, household, households, selectHousehold: setSelectedId, isLoading, error }),
     [me, household, households, isLoading, error]
@@ -52,4 +56,26 @@ export function useHousehold() {
   const context = useContext(HouseholdContext);
   if (!context) throw new Error("useHousehold precisa estar dentro de <HouseholdProvider>");
   return context;
+}
+
+// Ao abrir um household, gera os lançamentos recorrentes que faltam (os do mês
+// que virou, por exemplo). Uma vez por household a cada visita; se algo foi
+// criado, recarrega os dados dele.
+function useMaterializeRecurrences(householdId: string | undefined) {
+  const queryClient = useQueryClient();
+  const done = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (!householdId || done.current.has(householdId)) return;
+    done.current.add(householdId);
+    api
+      .post<{ generated: number }>(`/households/${householdId}/recurrences/materialize`)
+      .then(({ generated }) => {
+        if (generated > 0) return queryClient.invalidateQueries({ queryKey: ["households", householdId] });
+      })
+      .catch(() => {
+        // sem rede ou API fora: tenta de novo na próxima visita
+        done.current.delete(householdId);
+      });
+  }, [householdId, queryClient]);
 }

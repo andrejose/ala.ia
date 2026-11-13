@@ -11,6 +11,7 @@ import { HouseholdPage } from "../features/household/HouseholdPage";
 import { HouseholdProvider } from "../features/household/HouseholdProvider";
 import { ImportPage } from "../features/imports/ImportPage";
 import { MorePage } from "../features/more/MorePage";
+import { RecurrencesPage } from "../features/recurrences/RecurrencesPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
 import { TransactionsPage } from "../features/transactions/TransactionsPage";
 import { TransactionSheetProvider } from "../features/transactions/TransactionSheet";
@@ -65,6 +66,7 @@ export const routes: RouteObject[] = [
               { index: true, element: <DashboardPage /> },
               { path: "lancamentos", element: <TransactionsPage /> },
               { path: "importar", element: <ImportPage /> },
+              { path: "recorrentes", element: <RecurrencesPage /> },
               { path: "relatorios", element: <ReportsPage /> },
               { path: "contas", element: <AccountsPage /> },
               { path: "categorias", element: <CategoriesPage /> },

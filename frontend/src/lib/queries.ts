@@ -11,6 +11,7 @@ import type {
   ReportByCategory,
   ReportMonthly,
   ReportSummary,
+  Recurrence,
   TransactionList,
 } from "./types";
 
@@ -124,4 +125,12 @@ export function useHouseholdInvitations(householdId: string | undefined) {
 // Convites recebidos pelo usuário logado
 export function useMyInvitations() {
   return useQuery({ queryKey: ["invitations"], queryFn: () => api.get<MyInvitation[]>("/invitations") });
+}
+
+export function useRecurrences(householdId: string | undefined) {
+  return useQuery({
+    queryKey: ["households", householdId, "recurrences"],
+    queryFn: () => api.get<Recurrence[]>(`/households/${householdId}/recurrences`),
+    enabled: !!householdId,
+  });
 }

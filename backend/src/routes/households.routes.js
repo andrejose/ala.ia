@@ -4,6 +4,7 @@ import * as categories from "../controllers/categories.controller.js";
 import * as households from "../controllers/households.controller.js";
 import * as imports from "../controllers/imports.controller.js";
 import * as invitations from "../controllers/invitations.controller.js";
+import * as recurrences from "../controllers/recurrences.controller.js";
 import * as reports from "../controllers/reports.controller.js";
 import * as transactions from "../controllers/transactions.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
@@ -19,6 +20,11 @@ import {
   updateMemberSchema,
 } from "../schemas/households.schemas.js";
 import { commitImportSchema, MAX_IMPORT_FILE, previewQuery } from "../schemas/imports.schemas.js";
+import {
+  createRecurrenceSchema,
+  deleteRecurrenceQuery,
+  updateRecurrenceSchema,
+} from "../schemas/recurrences.schemas.js";
 import { byCategoryQuery, monthlyQuery, summaryQuery } from "../schemas/reports.schemas.js";
 import {
   createTransactionSchema,
@@ -101,3 +107,15 @@ household.post(
   imports.preview
 );
 household.post("/imports", validate({ body: commitImportSchema }), imports.commit);
+
+// Lançamentos recorrentes (a regra) e a geração dos meses que faltam
+household.get("/recurrences", recurrences.list);
+household.post("/recurrences", validate({ body: createRecurrenceSchema }), recurrences.create);
+household.post("/recurrences/materialize", recurrences.materializeAll);
+household.get("/recurrences/:id", validate({ params: idParams }), recurrences.get);
+household.patch("/recurrences/:id", validate({ params: idParams, body: updateRecurrenceSchema }), recurrences.update);
+household.delete(
+  "/recurrences/:id",
+  validate({ params: idParams, query: deleteRecurrenceQuery }),
+  recurrences.remove
+);

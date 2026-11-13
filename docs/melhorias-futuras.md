@@ -36,14 +36,13 @@ Ainda dá para evoluir o cartão com limite e dias de fechamento/vencimento. Sem
 Limitações do cartão que o rateio ou outras melhorias resolveriam:
 
 - **Compra única com várias categorias fora do cartão** (ex.: nota de mercado paga no Pix com comida e limpeza) continua precisando do rateio.
-- **Parcelamento:** exige lançar as parcelas futuras ou a compra inteira; pode ser resolvido junto com os lançamentos recorrentes.
+- **Parcelamento:** resolvido com os lançamentos recorrentes. Uma compra parcelada no cartão vira uma recorrência com "Quantas vezes", e cada parcela entra numerada no mês dela.
 - **Estorno:** como `amount > 0`, entra como receita, o que distorce um pouco o relatório por categoria.
 - **Mais lançamentos:** cada compra vira um lançamento. A importação de extratos (seção 1) compensa isso, já que o Nubank exporta a fatura do cartão em CSV.
 - **Histórico:** faturas já lançadas como despesa única na corrente ficam como estão.
 
 ## 3. Outras melhorias do app
 
-- **Lançamentos recorrentes:** aluguel, salário e assinaturas criados todo mês automaticamente.
 - **Metas e orçamento por categoria:** "gastar até R$ 800,00 em mercado".
 
 ## 4. Publicação

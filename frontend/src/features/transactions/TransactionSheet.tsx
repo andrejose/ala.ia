@@ -21,6 +21,8 @@ export interface TransactionPrefill {
   amount?: number;
   account_id?: string;
   destination_account_id?: string;
+  /** Abre já com "Repetir todo mês" ligado */
+  repeat?: boolean;
 }
 
 interface TransactionSheetContextValue {
@@ -93,6 +95,19 @@ const paidLabel: Record<TransactionType, { label: string; description: string }>
   transfer: { label: "Já transferi", description: "Desligado, fica agendada." },
 };
 
+interface RecurrenceInput {
+  type: TransactionType;
+  description: string;
+  amount: number;
+  account_id: string;
+  destination_account_id: string | null;
+  category_id: string | null;
+  day_of_month: number;
+  start_month: string;
+  occurrences: number | null;
+  auto_paid: boolean;
+}
+
 interface TransactionInput {
   type: TransactionType;
   description: string;
@@ -133,6 +148,8 @@ function TransactionForm({
   const [dueDate, setDueDate] = useState(transaction?.due_date ?? today());
   const [paid, setPaid] = useState(transaction ? transaction.payment_date !== null : true);
   const [paymentDate, setPaymentDate] = useState(transaction?.payment_date ?? today());
+  const [repeat, setRepeat] = useState(prefill?.repeat ?? false);
+  const [times, setTimes] = useState("");
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -142,6 +159,11 @@ function TransactionForm({
     transaction ? api.patch<Transaction>(`${base}/${transaction.id}`, input) : api.post<Transaction>(base, input)
   );
   const remove = useHouseholdMutation(householdId, () => api.delete(`${base}/${transaction!.id}`));
+  // Repetir todo mês: cria a regra, e a API já gera os lançamentos dos meses
+  const saveRecurrence = useHouseholdMutation(householdId, (input: RecurrenceInput) =>
+    api.post(`/households/${householdId}/recurrences`, input)
+  );
+  const repeating = repeat && !transaction;
 
   const isTransfer = type === "transfer";
   const categoryType = type === "income" ? "income" : "expense";
@@ -149,8 +171,9 @@ function TransactionForm({
   const categoryOptions = (categories.data ?? []).filter(
     (c) => c.type === categoryType && (c.is_active || c.id === transaction?.category_id)
   );
-  const errors = { ...fieldErrors(save.error), ...localErrors };
-  const error = errorMessage(save.error, {
+  const saveError = repeating ? saveRecurrence.error : save.error;
+  const errors = { ...fieldErrors(saveError), ...localErrors };
+  const error = errorMessage(saveError, {
     INVALID_REFERENCE: "A conta ou a categoria escolhida não vale para este lançamento. Escolha outra.",
   }) ?? errorMessage(remove.error);
 
@@ -189,8 +212,30 @@ function TransactionForm({
     if (isTransfer && destinationId && destinationId === accountId)
       problems.destination_account_id = "Escolha uma conta diferente da de origem.";
     if (!isTransfer && !categoryId) problems.category_id = "Escolha a categoria.";
+    const occurrences = times.trim() === "" ? null : Number(times);
+    if (repeating && occurrences !== null && !(Number.isInteger(occurrences) && occurrences >= 1 && occurrences <= 600))
+      problems.occurrences = "Use um número de 1 a 600, ou deixe vazio para repetir sem fim.";
     setLocalErrors(problems);
     if (Object.keys(problems).length > 0) return;
+
+    if (repeating) {
+      saveRecurrence.mutate(
+        {
+          type,
+          description,
+          amount: value!,
+          account_id: accountId,
+          destination_account_id: isTransfer ? destinationId : null,
+          category_id: isTransfer ? null : categoryId,
+          day_of_month: Number(dueDate.slice(8, 10)),
+          start_month: dueDate.slice(0, 7),
+          occurrences,
+          auto_paid: paid,
+        },
+        { onSuccess: onDone }
+      );
+      return;
+    }
 
     save.mutate(
       {
@@ -207,7 +252,7 @@ function TransactionForm({
     );
   }
 
-  const busy = save.isPending || remove.isPending;
+  const busy = save.isPending || remove.isPending || saveRecurrence.isPending;
 
   return (
     <>
@@ -283,16 +328,63 @@ function TransactionForm({
         <TextField
           id="tx-due"
           type="date"
-          label={paid ? "Data" : "Vencimento"}
+          label={repeating ? "Primeira data" : paid ? "Data" : "Vencimento"}
+          hint={repeating ? "Os próximos meses usam o mesmo dia. Dia 31 cai no último dia dos meses mais curtos." : undefined}
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
           error={errors.due_date}
           required
         />
 
+        {!transaction && (
+          <div className="rounded-2xl bg-surface-2 p-4">
+            <Toggle
+              id="tx-repeat"
+              label="Repetir todo mês"
+              description={repeat ? undefined : "Para aluguel, salário, assinaturas e parcelas."}
+              checked={repeat}
+              onChange={(on) => {
+                setRepeat(on);
+                // Repetindo, o padrão é cada mês entrar a pagar (ou a receber)
+                if (on) setPaid(false);
+              }}
+            />
+            {repeat && (
+              <div className="mt-3">
+                <TextField
+                  id="tx-times"
+                  label="Quantas vezes"
+                  inputMode="numeric"
+                  placeholder="Sem fim"
+                  value={times}
+                  onChange={(e) => setTimes(e.target.value.replace(/D/g, ""))}
+                  error={errors.occurrences}
+                  hint="Deixe vazio para repetir sem data para acabar. Com um número, a descrição ganha a parcela: (1/10), (2/10)…"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="rounded-2xl bg-surface-2 p-4">
-          <Toggle id="tx-paid" label={paidLabel[type].label} description={paid ? undefined : paidLabel[type].description} checked={paid} onChange={setPaid} />
-          {paid && (
+          {repeating ? (
+            <Toggle
+              id="tx-paid"
+              label="Débito automático"
+              description={
+                paid
+                  ? "Cada mês entra como pago no dia."
+                  : type === "income"
+                    ? "Desligado, cada mês entra como valor a receber."
+                    : "Desligado, cada mês entra como conta a pagar."
+              }
+              checked={paid}
+              onChange={setPaid}
+            />
+          ) : (
+            <Toggle id="tx-paid" label={paidLabel[type].label} description={paid ? undefined : paidLabel[type].description} checked={paid} onChange={setPaid} />
+          )}
+          {paid && !repeating && (
             <div className="mt-3">
               <TextField
                 id="tx-payment"
@@ -310,7 +402,7 @@ function TransactionForm({
         {error && <FormError>{error}</FormError>}
 
         <Button type="submit" className="w-full" disabled={busy}>
-          {save.isPending ? "Salvando…" : transaction ? "Salvar alterações" : "Lançar"}
+          {busy && !remove.isPending ? "Salvando…" : transaction ? "Salvar alterações" : repeating ? "Lançar e repetir" : "Lançar"}
         </Button>
 
         {transaction && (
