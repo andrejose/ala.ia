@@ -2,6 +2,7 @@ import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-qu
 import { api } from "./api";
 import type {
   Account,
+  BudgetList,
   Category,
   CategoryType,
   Invitation,
@@ -132,5 +133,14 @@ export function useRecurrences(householdId: string | undefined) {
     queryKey: ["households", householdId, "recurrences"],
     queryFn: () => api.get<Recurrence[]>(`/households/${householdId}/recurrences`),
     enabled: !!householdId,
+  });
+}
+
+export function useBudgets(householdId: string | undefined, month: string) {
+  return useQuery({
+    queryKey: ["households", householdId, "budgets", month],
+    queryFn: () => api.get<BudgetList>(`/households/${householdId}/budgets`, { month }),
+    enabled: !!householdId,
+    placeholderData: keepPreviousData,
   });
 }

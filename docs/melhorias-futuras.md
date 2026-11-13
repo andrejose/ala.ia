@@ -41,11 +41,7 @@ Limitações do cartão que o rateio ou outras melhorias resolveriam:
 - **Mais lançamentos:** cada compra vira um lançamento. A importação de extratos (seção 1) compensa isso, já que o Nubank exporta a fatura do cartão em CSV.
 - **Histórico:** faturas já lançadas como despesa única na corrente ficam como estão.
 
-## 3. Outras melhorias do app
-
-- **Metas e orçamento por categoria:** "gastar até R$ 800,00 em mercado".
-
-## 4. Publicação
+## 3. Publicação
 
 Hoje o projeto roda só localmente. Para publicar:
 

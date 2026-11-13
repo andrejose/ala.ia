@@ -228,6 +228,41 @@ export const components = {
       },
     },
 
+    BudgetList: {
+      type: "object",
+      properties: {
+        month: { type: "string", example: "2026-11" },
+        total: {
+          type: "object",
+          properties: {
+            amount: { type: "number", example: 1300, description: "Soma dos limites." },
+            spent: { type: "number", example: 850 },
+            remaining: { type: "number", example: 450 },
+          },
+        },
+        budgets: {
+          type: "array",
+          description: "Do mais usado (em %) para o menos usado.",
+          items: {
+            type: "object",
+            properties: {
+              category_id: { type: "string", format: "uuid" },
+              name: { type: "string", example: "Mercado" },
+              color: { type: ["string", "null"], example: "#5B8C5A" },
+              icon: { type: ["string", "null"], example: "shopping-cart" },
+              is_active: { type: "boolean", description: "false = categoria arquivada." },
+              amount: { type: "number", example: 800, description: "Limite do mês." },
+              spent: { type: "number", example: 600, description: "Gasto no mês, pendentes incluídos." },
+              paid: { type: "number", example: 400 },
+              pending: { type: "number", example: 200 },
+              remaining: { type: "number", example: 200, description: "Negativo = passou do limite." },
+              percent: { type: "integer", example: 75 },
+            },
+          },
+        },
+      },
+    },
+
     Recurrence: {
       type: "object",
       properties: {

@@ -5,6 +5,7 @@ import { AccountsPage } from "../features/accounts/AccountsPage";
 import { AuthProvider } from "../features/auth/AuthProvider";
 import { RedirectIfAuthenticated, RequireAuth } from "../features/auth/guards";
 import { LoginPage } from "../features/auth/LoginPage";
+import { BudgetsPage } from "../features/budgets/BudgetsPage";
 import { CategoriesPage } from "../features/categories/CategoriesPage";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { HouseholdPage } from "../features/household/HouseholdPage";
@@ -67,6 +68,7 @@ export const routes: RouteObject[] = [
               { path: "lancamentos", element: <TransactionsPage /> },
               { path: "importar", element: <ImportPage /> },
               { path: "recorrentes", element: <RecurrencesPage /> },
+              { path: "orcamento", element: <BudgetsPage /> },
               { path: "relatorios", element: <ReportsPage /> },
               { path: "contas", element: <AccountsPage /> },
               { path: "categorias", element: <CategoriesPage /> },

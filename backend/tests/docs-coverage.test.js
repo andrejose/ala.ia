@@ -18,7 +18,7 @@ function routesInCode() {
   const routes = [];
   for (const [file, routers] of Object.entries(mounts)) {
     const source = fs.readFileSync(file, "utf8");
-    for (const [, router, method, path] of source.matchAll(/(\w+)\.(get|post|patch|delete)\(\s*"([^"]*)"/g)) {
+    for (const [, router, method, path] of source.matchAll(/(\w+)\.(get|post|put|patch|delete)\(\s*"([^"]*)"/g)) {
       if (!(router in routers)) continue;
       const full = routers[router] + (path === "/" ? "" : path) || "/";
       routes.push(`${method.toUpperCase()} ${full.replace(/:(\w+)/g, "{$1}")}`);

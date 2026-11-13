@@ -1,5 +1,6 @@
 import { createAccountSchema, listAccountsQuery, updateAccountSchema } from "../../schemas/accounts.schemas.js";
 import { createCategorySchema, listCategoriesQuery, updateCategorySchema } from "../../schemas/categories.schemas.js";
+import { budgetParams, upsertBudgetSchema } from "../../schemas/budgets.schemas.js";
 import {
   createRecurrenceSchema,
   deleteRecurrenceQuery,
@@ -339,6 +340,50 @@ export const financePaths = {
         "(`remove_pending=false` para mantê-los).",
       parameters: queryParams(deleteRecurrenceQuery),
       responses: { 204: noContent("Excluída."), 400: badRequest, 401: unauthorized, 404: notFound },
+    },
+  },
+
+  "/households/{householdId}/budgets": {
+    parameters: [householdIdParam],
+    get: {
+      tags: ["Orçamento"],
+      summary: "Orçamento do mês",
+      description:
+        "Cada categoria com limite, com o quanto já foi gasto no mês. A conta é a mesma do relatório por " +
+        "categoria: mês do vencimento, pendentes incluídos, transferências fora. O limite vale para todo mês.",
+      parameters: queryParams(summaryQuery),
+      responses: { 200: json("Orçamento do mês.", ref("BudgetList")), 400: badRequest, 401: unauthorized, 404: notFound },
+    },
+  },
+
+  "/households/{householdId}/budgets/{categoryId}": {
+    parameters: [
+      householdIdParam,
+      { name: "categoryId", in: "path", required: true, description: "Id da categoria de despesa", schema: { type: "string", format: "uuid" } },
+    ],
+    put: {
+      tags: ["Orçamento"],
+      summary: "Define ou troca o limite de uma categoria",
+      description: "Só categorias de despesa. Se a categoria já tem limite, ele é trocado.",
+      requestBody: jsonBody(upsertBudgetSchema),
+      responses: {
+        200: json("Limite salvo.", {
+          type: "object",
+          properties: {
+            category_id: { type: "string", format: "uuid" },
+            amount: { type: "number", example: 800 },
+            updated_at: { type: "string", format: "date-time" },
+          },
+        }),
+        400: invalidReference,
+        401: unauthorized,
+        404: notFound,
+      },
+    },
+    delete: {
+      tags: ["Orçamento"],
+      summary: "Tira o limite de uma categoria",
+      responses: { 204: noContent("Limite removido."), 400: badRequest, 401: unauthorized, 404: notFound },
     },
   },
 };
