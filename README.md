@@ -15,7 +15,7 @@ Sistema de controle financeiro pessoal e compartilhado: uma **API REST** (Node.j
 - **Cartão de crédito**: cada compra é uma despesa no cartão, com a sua categoria, e o saldo negativo aparece como **fatura em aberto**. "Pagar fatura" abre a transferência da conta corrente para o cartão já preenchida; como transferência não tem categoria, o pagamento não conta duas vezes nos relatórios.
 - **Categorias** de receita e despesa, com cor e ícone. Todo cadastro já começa com Salário, Mercado, Transporte e Lazer.
 - **Lançamentos**: receitas, despesas e transferências entre contas; pendentes (a pagar ou a receber) não entram no saldo até serem marcados como pagos.
-- **Importação de extratos**: envie o CSV do extrato do Banco do Brasil ou do Santander, ou da fatura do cartão Nubank, e confira a **prévia** antes de gravar: categoria sugerida pelo que você já lançou, linhas já importadas ou parecidas com lançamentos feitos à mão marcadas, e tudo gravado de uma vez. Reimportar o mesmo extrato não duplica nada, e o arquivo não fica guardado.
+- **Importação de extratos**: envie o CSV do extrato do Banco do Brasil ou do Santander, ou da fatura do cartão Nubank, e confira a **prévia** antes de gravar: categoria sugerida pelo que você já lançou (o IOF de uma compra no exterior segue a categoria da compra), linhas já importadas ou parecidas com lançamentos feitos à mão marcadas, e tudo gravado de uma vez. Reimportar o mesmo extrato não duplica nada, e o arquivo não fica guardado.
 - **Relatórios**: total de entradas e saídas do mês (pagas e pendentes), gastos e receitas por categoria em gráfico de rosca, comparação com o mês anterior e gráfico mês a mês dos últimos 6 meses.
 - **Espaços compartilhados** (na API, _households_): um casal, por exemplo, divide contas, categorias e lançamentos. O dono convida por e-mail e a pessoa só entra se **aceitar o convite**.
 
@@ -187,7 +187,7 @@ Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de s
 
 ### Backend
 
-São **112 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+São **113 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
 ```bash
 cd backend
@@ -200,14 +200,14 @@ Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (
 
 ### Frontend
 
-São **35 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
+São **36 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
 
 ```bash
 cd frontend
 npm test
 ```
 
-Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente), **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido) e **arquivar categorias** (arquivar, reativar, sugestão ao excluir uma em uso e o que o formulário de lançamento oferece), **relatórios** (totais, comparação com o mês anterior, despesas e receitas por categoria e a navegação pelo gráfico mês a mês) e o **cartão de crédito** (cadastro com a fatura em aberto, fatura no lugar do saldo e "Pagar fatura" abrindo a transferência preenchida) e a **importação de extratos** (prévia, linhas desmarcadas e já importadas, categoria para todas de uma vez, bloqueio sem categoria e arquivo não reconhecido). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
+Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente), **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido) e **arquivar categorias** (arquivar, reativar, sugestão ao excluir uma em uso e o que o formulário de lançamento oferece), **relatórios** (totais, comparação com o mês anterior, despesas e receitas por categoria e a navegação pelo gráfico mês a mês) e o **cartão de crédito** (cadastro com a fatura em aberto, fatura no lugar do saldo e "Pagar fatura" abrindo a transferência preenchida) e a **importação de extratos** (prévia, linhas desmarcadas e já importadas, categoria para todas de uma vez, IOF acompanhando a categoria da compra, bloqueio sem categoria e arquivo não reconhecido). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
 
 ## Integração contínua (CI)
 

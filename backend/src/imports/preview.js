@@ -29,15 +29,43 @@ export function descriptionKey(description) {
   return words.slice(0, 2).join(" ");
 }
 
+// IOF cobrado sobre uma compra no exterior: 'IOF de "Anthropic* Claude Sub"'
+// -> 'Anthropic* Claude Sub' (a compra a que ele se refere); senão, null
+export function iofPurchase(description) {
+  const match = /^\s*iof\s+(?:de\s+)?"?(.+?)"?\s*$/i.exec(String(description ?? ""));
+  return match ? match[1] : null;
+}
+
 // Categoria sugerida a partir do que a pessoa já lançou: a categoria mais
 // recente usada numa descrição parecida, do mesmo tipo. Assim as escolhas da
 // prévia viram as sugestões da próxima importação.
+// O IOF segue a categoria da compra a que se refere e não ensina nada: assim
+// uma categoria dada a ele não muda a sugestão da própria compra.
 export function categorySuggester(history) {
   const byKey = new Map();
   for (const tx of history) {
+    if (iofPurchase(tx.description)) continue;
     const key = descriptionKey(tx.description);
     const mapKey = `${tx.type}:${key}`;
     if (key && tx.category_id && !byKey.has(mapKey)) byKey.set(mapKey, tx.category_id);
   }
-  return (type, description) => byKey.get(`${type}:${descriptionKey(description)}`) ?? null;
+  return (type, description) =>
+    byKey.get(`${type}:${descriptionKey(iofPurchase(description) ?? description)}`) ?? null;
+}
+
+// No mesmo arquivo, liga cada IOF à compra a que ele se refere (a mais próxima
+// na data), para a prévia levar a categoria da compra para o IOF.
+export function linkIofToPurchases(rows) {
+  return rows.map((row) => {
+    const purchase = iofPurchase(row.description);
+    if (!purchase || row.amount >= 0) return row;
+    const key = descriptionKey(purchase);
+    const candidates = rows.filter(
+      (other) => other !== row && other.amount < 0 && !iofPurchase(other.description) && descriptionKey(other.description) === key
+    );
+    if (candidates.length === 0) return row;
+    const distance = (other) => Math.abs(Date.parse(other.date) - Date.parse(row.date));
+    const closest = candidates.reduce((best, other) => (distance(other) < distance(best) ? other : best));
+    return { ...row, follows: closest.import_hash };
+  });
 }

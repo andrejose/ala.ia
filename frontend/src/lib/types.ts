@@ -168,6 +168,8 @@ export interface ImportRow {
   status: ImportRowStatus;
   selected: boolean;
   note: string | null;
+  /** Só no IOF: import_hash da compra a que ele se refere */
+  follows?: string | null;
 }
 
 export interface ImportPreview {
