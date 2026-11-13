@@ -191,7 +191,7 @@ Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de s
 
 ### Backend
 
-São **138 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+São **146 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
 ```bash
 cd backend
@@ -200,7 +200,7 @@ cp .env.test.example .env.test   # preencha o PUBLISHABLE_KEY de `npx supabase s
 npm test
 ```
 
-Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (401) e o bloqueio de acesso ao espaço de outra pessoa (RLS). Também cobrem cálculo de saldo, relatórios, recorrências (gerar, editar, pausar e excluir), orçamento, a leitura dos extratos de cada banco em CSV, PDF e OFX (com arquivos fictícios no formato real; os PDFs são gerados no teste, no layout de cada banco), duplicatas na importação, regra do último dono, fluxo completo de convites, regras do banco acessado direto (sem a API) e um teste que garante que **toda rota da API está documentada** no Swagger.
+Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (401) e o bloqueio de acesso ao espaço de outra pessoa (RLS). Também cobrem cálculo de saldo, relatórios, recorrências (gerar, editar, pausar e excluir), orçamento, a leitura dos extratos de cada banco em CSV, PDF e OFX (com arquivos fictícios no formato real; os PDFs são gerados no teste, no layout de cada banco), duplicatas na importação, regra do último dono, fluxo completo de convites, regras do banco acessado direto (sem a API) e um teste que garante que **toda rota da API está documentada** no Swagger. As peças de produção também têm teste: cabeçalhos de segurança, API em `/api`, limite de tentativas no login (429), log das requisições e o frontend entregue pelo backend.
 
 ### Frontend
 
@@ -221,6 +221,7 @@ O GitHub Actions roda o workflow [`.github/workflows/ci.yml`](.github/workflows/
 | :------- | :-------- |
 | Backend  | Sobe o Supabase local no runner (Docker), aplica as migrations e roda os testes do banco (pgTAP) e os de integração |
 | Frontend | Checa os tipos (`npm run typecheck`), roda os testes (`npm test`) e faz o build (`npm run build`) |
+| Imagem Docker | Monta a imagem de produção (a mesma do Coolify) e confere se ela sobe saudável, com a API e as telas |
 
 O CI não usa o projeto Supabase remoto nem segredos do repositório. A `main` é protegida: merge só por pull request, com os dois jobs passando.
 
@@ -230,12 +231,13 @@ O CI não usa o projeto Supabase remoto nem segredos do repositório. A `main` �
 | :--- | :--- |
 | [docs/roteiro-backend.md](docs/roteiro-backend.md) | Decisões, convenções, mapeamento de erros e endpoints por fase |
 | [docs/roteiro-frontend.md](docs/roteiro-frontend.md) | Decisões, identidade visual e telas |
+| [docs/publicacao.md](docs/publicacao.md) | Publicação no Coolify (VPS) em https://ala.andrejose.com.br: DNS, deploy, variáveis e Supabase Auth |
 | [docs/melhorias-futuras.md](docs/melhorias-futuras.md) | Ideias para depois da versão 1.0 (importação de extratos, rateio de lançamentos...) |
 | `http://localhost:3001/docs` | Swagger da API |
 
 ## Limitações conhecidas (versão 1.0)
 
-- Roda **só localmente**; publicar exige liberar CORS e hospedar backend e frontend (ver [melhorias futuras](docs/melhorias-futuras.md#4-publicação)).
+- Publicado como um contêiner só (API + telas) no Coolify; ver [docs/publicacao.md](docs/publicacao.md).
 - O **aceite de convites confia no e-mail da conta**: no projeto Supabase remoto, a confirmação de e-mail precisa estar ligada.
 - A sessão guarda o `refresh_token` no `localStorage`, adequado ao projeto; em produção, cookies `httpOnly` seriam mais seguros.
 

@@ -5,6 +5,8 @@
 #               roda os testes do banco (pgTAP) e os de integração (Vitest + supertest);
 #   - frontend: checa os tipos (TypeScript), roda os testes (Vitest +
 #               Testing Library, com a API simulada pelo MSW) e faz o build (Vite).
+#   - docker:   monta a imagem de produção (a mesma do Coolify) e confere se
+#               ela sobe saudável, com a API e as telas no mesmo endereço.
 #
 # Nada aqui usa o projeto Supabase remoto nem segredos do repositório.
 
@@ -108,3 +110,34 @@ jobs:
 
       - name: Faz o build
         run: npm run build
+
+  docker:
+    name: Imagem Docker (build e saúde)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      # A mesma imagem que o Coolify monta para publicar
+      - name: Monta a imagem
+        run: docker build -t ala-ia:ci .
+
+      # Sobe o contêiner (com um Supabase de mentira: só /health e as telas são
+      # conferidos, sem falar com o banco) e espera ficar saudável
+      - name: Sobe o contêiner e confere a saúde, a API e as telas
+        run: |
+          docker run -d --name ala -p 3001:3001 \
+            -e SUPABASE_URL=http://supabase.invalid \
+            -e SUPABASE_PUBLISHABLE_KEY=ci \
+            ala-ia:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3001/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://localhost:3001/api/health
+          curl -fsS -H "Accept: text/html" http://localhost:3001/lancamentos | grep -q '<div id="root">'
+          curl -fsSI http://localhost:3001/ | grep -qi "content-security-policy"
+
+      - name: Mostra os logs do contêiner se algo falhar
+        if: failure()
+        run: docker logs ala
