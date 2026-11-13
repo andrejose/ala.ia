@@ -110,14 +110,14 @@ function FileStep({ householdId, onPreview }: { householdId: string; onPreview: 
           <input
             id="import-file"
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.pdf,.ofx,text/csv,application/pdf,application/x-ofx"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             aria-describedby="import-file-hint"
             className="block w-full rounded-2xl border border-dashed border-line bg-surface-2/50 px-4 py-4 text-sm file:mr-3 file:rounded-xl file:border-0 file:bg-primary-soft file:px-3 file:py-2 file:font-bold file:text-primary"
           />
           <span id="import-file-hint" className="mt-1.5 block text-sm text-muted">
-            Por enquanto, o CSV do extrato do Banco do Brasil e do Santander e o CSV da fatura do cartão Nubank. O
-            arquivo é lido e descartado: não fica guardado.
+            Extrato do Banco do Brasil ou do Santander e fatura do cartão Nubank, em CSV ou PDF, e OFX de qualquer
+            banco. O arquivo é lido e descartado: não fica guardado.
           </span>
         </div>
 

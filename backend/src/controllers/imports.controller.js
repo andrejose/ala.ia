@@ -1,6 +1,7 @@
 import { HttpError } from "../errors/HttpError.js";
 import { detectParser, parsers } from "../imports/parsers/index.js";
 import { categorySuggester, linkIofToPurchases, withImportHashes } from "../imports/preview.js";
+import { isPdf, pdfLines } from "../imports/pdf.js";
 import { decodeText, ParseError } from "../imports/text.js";
 import { MAX_IMPORT_ROWS } from "../schemas/imports.schemas.js";
 
@@ -22,13 +23,26 @@ async function getAccount(supabase, householdId, id) {
   return data;
 }
 
-function readStatement(body) {
+// PDF vira linhas com a posição de cada texto; CSV e OFX são lidos como texto
+async function readDocument(body) {
+  if (!isPdf(body)) return { format: "text", text: decodeText(body) };
+  const lines = await pdfLines(body);
+  return { format: "pdf", lines, text: lines.map((line) => line.text).join("\n") };
+}
+
+async function readStatement(body) {
   if (!Buffer.isBuffer(body) || body.length === 0) {
     throw new HttpError(400, "VALIDATION_ERROR", "Envie o arquivo do extrato no corpo da requisição.");
   }
 
-  const text = decodeText(body);
-  const parser = detectParser(text);
+  let document;
+  try {
+    document = await readDocument(body);
+  } catch (err) {
+    if (err instanceof ParseError) throw new HttpError(400, "INVALID_FILE", err.message);
+    throw err;
+  }
+  const parser = detectParser(document);
   if (!parser) {
     throw new HttpError(
       400,
@@ -39,7 +53,7 @@ function readStatement(body) {
 
   let rows;
   try {
-    rows = parser.parse(text);
+    rows = parser.parse(document);
   } catch (err) {
     if (err instanceof ParseError) throw new HttpError(400, "INVALID_FILE", err.message);
     throw err;
@@ -52,8 +66,9 @@ function readStatement(body) {
 }
 
 // Lançamentos que já existem na conta no período do arquivo, para marcar o
-// que já foi importado e o que parece ter sido lançado à mão.
-async function existingInPeriod(supabase, accountId, from, to) {
+// que já foi importado e o que parece já estar na conta: lançado à mão ou
+// importado de outro arquivo (o mesmo extrato em CSV e em PDF, por exemplo).
+async function existingInPeriod(supabase, accountId, from, to, fileHashes) {
   const { data, error } = await supabase
     .from("transactions")
     .select("import_hash, account_id, destination_account_id, type, amount, due_date")
@@ -66,7 +81,7 @@ async function existingInPeriod(supabase, accountId, from, to) {
   const imported = new Set();
   const manual = new Map(); // "data|valor com sinal" -> quantos
   for (const tx of data) {
-    if (tx.import_hash && tx.account_id === accountId) {
+    if (tx.import_hash && tx.account_id === accountId && fileHashes.has(tx.import_hash)) {
       imported.add(tx.import_hash);
       continue;
     }
@@ -104,12 +119,12 @@ async function loadSuggester(supabase, householdId) {
 export async function preview(req, res) {
   const { account_id } = req.validated.query;
   const account = await getAccount(req.supabase, req.household.id, account_id);
-  const { parser, rows } = readStatement(req.body);
+  const { parser, rows } = await readStatement(req.body);
 
   const parsed = linkIofToPurchases(withImportHashes(rows));
   const dates = parsed.map((row) => row.date).sort();
   const [{ imported, manual }, suggest] = await Promise.all([
-    existingInPeriod(req.supabase, account.id, dates[0], dates.at(-1)),
+    existingInPeriod(req.supabase, account.id, dates[0], dates.at(-1), new Set(parsed.map((row) => row.import_hash))),
     loadSuggester(req.supabase, req.household.id),
   ]);
 
