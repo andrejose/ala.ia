@@ -19,6 +19,8 @@ import { useHousehold } from "../household/HouseholdProvider";
 interface RowChoice {
   selected: boolean;
   category_id: string;
+  /** A pessoa escolheu a categoria desta linha (o IOF deixa de seguir a compra) */
+  chosen?: boolean;
 }
 
 export function ImportPage() {
@@ -179,7 +181,18 @@ function PreviewStep({
   const total = chosen.reduce((sum, row) => sum + (row.type === "income" ? row.amount : -row.amount), 0);
 
   function update(hash: string, change: Partial<RowChoice>) {
-    setChoices((current) => ({ ...current, [hash]: { ...current[hash], ...change } }));
+    setChoices((current) => {
+      const next = { ...current, [hash]: { ...current[hash], ...change } };
+      // O IOF de uma compra acompanha a categoria dela, enquanto a pessoa não
+      // escolher uma categoria para o próprio IOF
+      if (change.category_id !== undefined) {
+        for (const row of preview.rows) {
+          const iof = next[row.import_hash];
+          if (row.follows === hash && !iof.chosen) next[row.import_hash] = { ...iof, category_id: change.category_id };
+        }
+      }
+      return next;
+    });
   }
 
   // Uma categoria para todas as linhas marcadas, daquele tipo, que estão sem
@@ -352,7 +365,7 @@ function PreviewRow({
           label={`Categoria de ${row.description}`}
           hideLabel
           value={choice.category_id}
-          onChange={(e) => onChange({ category_id: e.target.value, selected: true })}
+          onChange={(e) => onChange({ category_id: e.target.value, selected: true, chosen: true })}
           error={invalid ? "Escolha a categoria" : undefined}
         >
           <option value="">Categoria</option>

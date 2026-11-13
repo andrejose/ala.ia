@@ -258,6 +258,11 @@ export const components = {
               status: { type: "string", enum: ["new", "imported", "similar"] },
               selected: { type: "boolean", description: "Se a linha vem marcada para importar" },
               note: { type: "string", nullable: true, description: "Por que a linha veio desmarcada" },
+              follows: {
+                type: "string",
+                nullable: true,
+                description: "Só no IOF: o import_hash da compra a que ele se refere, para seguir a categoria dela",
+              },
             },
           },
         },

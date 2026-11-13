@@ -106,6 +106,27 @@ describe("Importar extrato", () => {
     expect(screen.getByRole("button", { name: "Importar 0" })).toBeDisabled();
   });
 
+  it("o IOF acompanha a categoria escolhida para a compra, até ganhar uma própria", async () => {
+    db.categories.push({ id: "c3", household_id: "h1", name: "Assinaturas", type: "expense", color: null, icon: null, is_active: true });
+    const purchase = row("Assinatura Exemplo", 114.4);
+    setPreview([purchase, row('IOF de "Assinatura Exemplo"', 4, { follows: purchase.import_hash }), row("Posto", 100)]);
+    const { user } = await readFile();
+
+    const list = within(await screen.findByRole("list", { name: "Lançamentos do arquivo" }));
+    const category = (name: RegExp) => list.getByRole("combobox", { name });
+
+    await user.selectOptions(category(/^Categoria de Assinatura Exemplo/), "Assinaturas");
+    expect(category(/^Categoria de IOF de/)).toHaveValue("c3");
+    // Outras linhas não mudam
+    expect(category(/^Categoria de Posto/)).toHaveValue("");
+
+    // Depois que o IOF ganha uma categoria própria, ele não acompanha mais
+    await user.selectOptions(category(/^Categoria de IOF de/), "Mercado");
+    await user.selectOptions(category(/^Categoria de Assinatura Exemplo/), "Mercado");
+    await user.selectOptions(category(/^Categoria de Assinatura Exemplo/), "Assinaturas");
+    expect(category(/^Categoria de IOF de/)).toHaveValue("c1");
+  });
+
   it("avisa quando a fatura de cartão vai para uma conta que não é cartão", async () => {
     setPreview([row("Posto", 100, { category_id: "c1" })], { kind: "credit_card", kind_mismatch: true });
     await readFile();

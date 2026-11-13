@@ -1,6 +1,6 @@
 import { HttpError } from "../errors/HttpError.js";
 import { detectParser, parsers } from "../imports/parsers/index.js";
-import { categorySuggester, withImportHashes } from "../imports/preview.js";
+import { categorySuggester, linkIofToPurchases, withImportHashes } from "../imports/preview.js";
 import { decodeText, ParseError } from "../imports/text.js";
 import { MAX_IMPORT_ROWS } from "../schemas/imports.schemas.js";
 
@@ -106,7 +106,7 @@ export async function preview(req, res) {
   const account = await getAccount(req.supabase, req.household.id, account_id);
   const { parser, rows } = readStatement(req.body);
 
-  const parsed = withImportHashes(rows);
+  const parsed = linkIofToPurchases(withImportHashes(rows));
   const dates = parsed.map((row) => row.date).sort();
   const [{ imported, manual }, suggest] = await Promise.all([
     existingInPeriod(req.supabase, account.id, dates[0], dates.at(-1)),
@@ -141,6 +141,8 @@ export async function preview(req, res) {
       status,
       selected: status === "new" && !row.deselect,
       note,
+      // IOF: o import_hash da compra a que se refere, para seguir a categoria dela
+      follows: row.follows ?? null,
     };
   });
 

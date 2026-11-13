@@ -174,6 +174,30 @@ describe("Importação — gravação e duplicatas", () => {
     expect(pizzas.map((row) => row.category_id)).toEqual([pizza.id, pizza.id]);
   });
 
+  it("o IOF segue a categoria da compra a que se refere e não muda a sugestão dela", async () => {
+    const carla = await createTestUser({ name: "Carla IOF" });
+    const card = await createAccount(carla, { name: "Cartão", type: "credit_card" });
+
+    // No mesmo arquivo, o IOF fica ligado à compra
+    const first = await preview(carla, card.id, nubankFile);
+    const byName = (body, start) => body.rows.find((row) => row.description.startsWith(start));
+    const purchase = byName(first.body, "Assinatura Exemplo");
+    expect(byName(first.body, "IOF de").follows).toBe(purchase.import_hash);
+    expect(first.body.rows.filter((row) => row.follows).length).toBe(1);
+
+    // Histórico: a assinatura em Streaming e, depois, um IOF posto em outra categoria
+    const streaming = await createCategory(carla, { name: "Streaming", type: "expense" });
+    const fees = await createCategory(carla, { name: "Tarifas", type: "expense" });
+    const tx = (description, category_id) =>
+      createTransaction(carla, { type: "expense", description, amount: 10, account_id: card.id, category_id, due_date: "2026-09-30", payment_date: "2026-09-30" });
+    await tx("Assinatura Exemplo", streaming.id);
+    await tx('IOF de "Assinatura Exemplo"', fees.id);
+
+    const next = await preview(carla, card.id, nubankFile);
+    expect(byName(next.body, "Assinatura Exemplo").category_id).toBe(streaming.id);
+    expect(byName(next.body, "IOF de").category_id).toBe(streaming.id);
+  });
+
   it("recusa categoria do tipo errado e não grava nada (tudo ou nada)", async () => {
     const account = await createAccount(ana, { name: "BB Tudo ou Nada" });
     const res = await preview(ana, account.id, bbFile);
