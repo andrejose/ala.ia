@@ -1,5 +1,10 @@
 import { createAccountSchema, listAccountsQuery, updateAccountSchema } from "../../schemas/accounts.schemas.js";
 import { createCategorySchema, listCategoriesQuery, updateCategorySchema } from "../../schemas/categories.schemas.js";
+import {
+  createRecurrenceSchema,
+  deleteRecurrenceQuery,
+  updateRecurrenceSchema,
+} from "../../schemas/recurrences.schemas.js";
 import { commitImportSchema, MAX_IMPORT_FILE, MAX_IMPORT_ROWS, previewQuery } from "../../schemas/imports.schemas.js";
 import { byCategoryQuery, MAX_SERIES_MONTHS, monthlyQueryFields, summaryQuery } from "../../schemas/reports.schemas.js";
 import {
@@ -251,6 +256,89 @@ export const financePaths = {
         401: unauthorized,
         404: notFound,
       },
+    },
+  },
+
+  "/households/{householdId}/recurrences": {
+    parameters: [householdIdParam],
+    get: {
+      tags: ["Recorrentes"],
+      summary: "Lista as recorrências",
+      description: "As ativas primeiro, em ordem de descrição.",
+      responses: {
+        200: json("Lista.", { type: "array", items: ref("Recurrence") }),
+        401: unauthorized,
+        404: notFound,
+      },
+    },
+    post: {
+      tags: ["Recorrentes"],
+      summary: "Cria uma recorrência",
+      description:
+        "Cria a regra e já gera os lançamentos dos meses que faltam, do primeiro mês até o fim do mês seguinte. " +
+        "Sem débito automático, cada mês entra pendente; com débito automático, entra pago, mas só quando o dia " +
+        "chega. Com `occurrences`, as descrições ganham o número da parcela, como \"Geladeira (2/10)\". " +
+        "As regras de tipo são as mesmas dos lançamentos.",
+      requestBody: jsonBody(createRecurrenceSchema),
+      responses: {
+        201: json("Criada.", ref("RecurrenceWithGenerated")),
+        400: badRequest,
+        401: unauthorized,
+        404: notFound,
+      },
+    },
+  },
+
+  "/households/{householdId}/recurrences/materialize": {
+    parameters: [householdIdParam],
+    post: {
+      tags: ["Recorrentes"],
+      summary: "Gera os lançamentos que faltam",
+      description:
+        "Gera, para todas as recorrências ativas, os meses que ainda não foram gerados, até o fim do mês seguinte. " +
+        "Pode ser chamada quantas vezes for preciso: cada mês é gerado uma vez só, e um mês cujo lançamento foi " +
+        "excluído não volta. O app chama ao abrir.",
+      responses: {
+        200: json("Quantos lançamentos foram criados.", {
+          type: "object",
+          properties: { generated: { type: "integer", example: 3 } },
+        }),
+        401: unauthorized,
+        404: notFound,
+      },
+    },
+  },
+
+  "/households/{householdId}/recurrences/{id}": {
+    parameters: [householdIdParam, idParam("da recorrência")],
+    get: {
+      tags: ["Recorrentes"],
+      summary: "Detalha uma recorrência",
+      responses: { 200: json("Recorrência.", ref("Recurrence")), 400: badRequest, 401: unauthorized, 404: notFound },
+    },
+    patch: {
+      tags: ["Recorrentes"],
+      summary: "Edita, pausa ou reativa uma recorrência",
+      description:
+        "Mudar valor, dia, conta, categoria ou descrição refaz os lançamentos futuros ainda pendentes; os pagos e " +
+        "os atrasados ficam como estão. `is_active: false` pausa e tira os pendentes futuros; reativar volta a " +
+        "gerar a partir do mês atual, sem preencher os meses pausados.",
+      requestBody: jsonBody(updateRecurrenceSchema),
+      responses: {
+        200: json("Atualizada.", ref("RecurrenceWithGenerated")),
+        400: badRequest,
+        401: unauthorized,
+        404: notFound,
+      },
+    },
+    delete: {
+      tags: ["Recorrentes"],
+      summary: "Exclui uma recorrência",
+      description:
+        "Os lançamentos já gerados continuam, sem o vínculo. Por padrão, os futuros ainda pendentes saem junto " +
+        "(`remove_pending=false` para mantê-los).",
+      parameters: queryParams(deleteRecurrenceQuery),
+      responses: { 204: noContent("Excluída."), 400: badRequest, 401: unauthorized, 404: notFound },
     },
   },
 };

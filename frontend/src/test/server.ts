@@ -10,6 +10,7 @@ import type {
   Me,
   Member,
   MyInvitation,
+  Recurrence,
   ReportByCategory,
   ReportSummary,
   Transaction,
@@ -56,6 +57,9 @@ function initialDb() {
       { id: "c2", household_id: "h1", name: "Salário", type: "income", color: null, icon: null, is_active: true },
     ] as Category[],
     transactions: [] as Transaction[],
+    recurrences: [] as Recurrence[],
+    // Quantos lançamentos o "gerar recorrentes" diz ter criado
+    materialized: 0,
     invitations: [] as Invitation[],
     myInvitations: [] as MyInvitation[],
     members: [{ user_id: "u1", name: "Maria Silva", role: "owner", joined_at: "2026-11-01T10:00:00Z" }] as Member[],
@@ -72,6 +76,8 @@ function initialDb() {
       categories: [] as unknown[],
       accounts: [] as unknown[],
       imports: [] as unknown[],
+      recurrences: [] as unknown[],
+      materialize: 0,
       // Arquivos enviados para a prévia: { account_id, text }
       importFiles: [] as unknown[],
     },
@@ -226,6 +232,38 @@ const handlers = [
     const body = (await request.json()) as { rows: unknown[] };
     db.requests.imports.push(body);
     return HttpResponse.json({ imported: body.rows.length, skipped: 0 }, { status: 201 });
+  }),
+  // Recorrentes
+  http.post("*/api/households/:id/recurrences/materialize", () => {
+    db.requests.materialize += 1;
+    return HttpResponse.json({ generated: db.materialized });
+  }),
+  http.get("*/api/households/:id/recurrences", () => HttpResponse.json(db.recurrences)),
+  http.post("*/api/households/:id/recurrences", async ({ request, params }) => {
+    const body = (await request.json()) as Omit<Recurrence, "id" | "household_id" | "is_active" | "generated_until">;
+    db.requests.recurrences.push(body);
+    const created: Recurrence = {
+      ...body,
+      id: `r${db.recurrences.length + 1}`,
+      household_id: String(params.id),
+      is_active: true,
+      generated_until: body.start_month,
+    };
+    db.recurrences.push(created);
+    return HttpResponse.json({ ...created, generated: 1 }, { status: 201 });
+  }),
+  http.patch("*/api/households/:id/recurrences/:recurrenceId", async ({ request, params }) => {
+    const body = (await request.json()) as Partial<Recurrence>;
+    db.requests.recurrences.push(body);
+    const recurrence = db.recurrences.find((r) => r.id === params.recurrenceId);
+    if (!recurrence) return apiError(404, "NOT_FOUND", "Recurso não encontrado.");
+    Object.assign(recurrence, body);
+    return HttpResponse.json({ ...recurrence, generated: 0 });
+  }),
+  http.delete("*/api/households/:id/recurrences/:recurrenceId", ({ request, params }) => {
+    db.requests.recurrences.push({ deleted: params.recurrenceId, query: new URL(request.url).search });
+    db.recurrences = db.recurrences.filter((r) => r.id !== params.recurrenceId);
+    return new HttpResponse(null, { status: 204 });
   }),
   http.get("*/api/households/:id/members", () => HttpResponse.json(db.members)),
   http.get("*/api/households/:id/invitations", () => HttpResponse.json(db.invitations)),

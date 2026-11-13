@@ -15,6 +15,7 @@ Sistema de controle financeiro pessoal e compartilhado: uma **API REST** (Node.j
 - **Cartão de crédito**: cada compra é uma despesa no cartão, com a sua categoria, e o saldo negativo aparece como **fatura em aberto**. "Pagar fatura" abre a transferência da conta corrente para o cartão já preenchida; como transferência não tem categoria, o pagamento não conta duas vezes nos relatórios.
 - **Categorias** de receita e despesa, com cor e ícone. Todo cadastro já começa com Salário, Mercado, Transporte e Lazer.
 - **Lançamentos**: receitas, despesas e transferências entre contas; pendentes (a pagar ou a receber) não entram no saldo até serem marcados como pagos.
+- **Lançamentos recorrentes**: aluguel, salário, assinaturas e parcelas. Ao lançar, ligue "Repetir todo mês" (com ou sem número de vezes): cada mês entra sozinho, a pagar ou a receber até o mês seguinte, ou já pago no dia com débito automático. Parcelas ganham a numeração, como "Geladeira (2/10)". Editar a regra refaz só os lançamentos futuros ainda não pagos; pular um mês é só excluir o lançamento dele.
 - **Importação de extratos**: envie o CSV do extrato do Banco do Brasil ou do Santander, ou da fatura do cartão Nubank, e confira a **prévia** antes de gravar: categoria sugerida pelo que você já lançou (o IOF de uma compra no exterior segue a categoria da compra), linhas já importadas ou parecidas com lançamentos feitos à mão marcadas, e tudo gravado de uma vez. Reimportar o mesmo extrato não duplica nada, e o arquivo não fica guardado.
 - **Relatórios**: total de entradas e saídas do mês (pagas e pendentes), gastos e receitas por categoria em gráfico de rosca, comparação com o mês anterior e gráfico mês a mês dos últimos 6 meses.
 - **Espaços compartilhados** (na API, _households_): um casal, por exemplo, divide contas, categorias e lançamentos. O dono convida por e-mail e a pessoa só entra se **aceitar o convite**.
@@ -127,6 +128,7 @@ A documentação completa, com exemplos e todos os erros, fica no Swagger: **htt
 | Categorias | CRUD em `/households/:id/categories` |
 | Lançamentos | CRUD em `/households/:id/transactions`, com filtros e paginação |
 | Relatórios | `GET /households/:id/reports/summary`, `/reports/by-category` e `/reports/monthly` |
+| Recorrentes | CRUD em `/households/:id/recurrences` e `POST /households/:id/recurrences/materialize` (gera os meses que faltam) |
 | Importação | `POST /households/:id/imports/preview` (o arquivo vai cru no corpo) e `POST /households/:id/imports` |
 
 Endpoints, convenções e mapeamento de erros: [docs/roteiro-backend.md](docs/roteiro-backend.md).
@@ -175,7 +177,7 @@ O Vite repassa as chamadas de `/api` para o backend, então não é preciso conf
 
 ### Banco (pgTAP)
 
-São **93 testes** em SQL, em `backend/supabase/tests/database/`, que falam direto com o Postgres, sem passar pela API. Cada arquivo roda numa transação desfeita no fim, então nada fica no banco local.
+São **105 testes** em SQL, em `backend/supabase/tests/database/`, que falam direto com o Postgres, sem passar pela API. Cada arquivo roda numa transação desfeita no fim, então nada fica no banco local.
 
 ```bash
 cd backend
@@ -183,11 +185,11 @@ npx supabase start
 npm run test:db
 ```
 
-Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de sempre ter um dono, o autor do lançamento, o **RLS** de todas as tabelas (quem é de fora, membro, dono e anônimo), as constraints dos lançamentos (tipo, categoria, transferência e espaço), o saldo das contas, o fluxo do cartão de crédito (compras, fatura e pagamento), o identificador único das linhas importadas, os relatórios (do mês e mês a mês) e as funções de convite com cada erro que a API traduz.
+Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de sempre ter um dono, o autor do lançamento, o **RLS** de todas as tabelas (quem é de fora, membro, dono e anônimo), as constraints dos lançamentos (tipo, categoria, transferência e espaço), o saldo das contas, o fluxo do cartão de crédito (compras, fatura e pagamento), o identificador único das linhas importadas, a geração dos lançamentos recorrentes (parcelas, débito automático, dia 31, mês excluído que não volta), os relatórios (do mês e mês a mês) e as funções de convite com cada erro que a API traduz.
 
 ### Backend
 
-São **113 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+São **123 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
 ```bash
 cd backend
@@ -196,18 +198,18 @@ cp .env.test.example .env.test   # preencha o PUBLISHABLE_KEY de `npx supabase s
 npm test
 ```
 
-Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (401) e o bloqueio de acesso ao espaço de outra pessoa (RLS). Também cobrem cálculo de saldo, relatórios, a leitura dos extratos de cada banco (com arquivos fictícios no formato real), duplicatas na importação, regra do último dono, fluxo completo de convites, regras do banco acessado direto (sem a API) e um teste que garante que **toda rota da API está documentada** no Swagger.
+Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (401) e o bloqueio de acesso ao espaço de outra pessoa (RLS). Também cobrem cálculo de saldo, relatórios, recorrências (gerar, editar, pausar e excluir), a leitura dos extratos de cada banco (com arquivos fictícios no formato real), duplicatas na importação, regra do último dono, fluxo completo de convites, regras do banco acessado direto (sem a API) e um teste que garante que **toda rota da API está documentada** no Swagger.
 
 ### Frontend
 
-São **36 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
+São **42 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
 
 ```bash
 cd frontend
 npm test
 ```
 
-Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente), **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido) e **arquivar categorias** (arquivar, reativar, sugestão ao excluir uma em uso e o que o formulário de lançamento oferece), **relatórios** (totais, comparação com o mês anterior, despesas e receitas por categoria e a navegação pelo gráfico mês a mês) e o **cartão de crédito** (cadastro com a fatura em aberto, fatura no lugar do saldo e "Pagar fatura" abrindo a transferência preenchida) e a **importação de extratos** (prévia, linhas desmarcadas e já importadas, categoria para todas de uma vez, IOF acompanhando a categoria da compra, bloqueio sem categoria e arquivo não reconhecido). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
+Cobrem os fluxos principais: **entrar** (login, erro de senha, erros por campo, redirecionamento de quem não entrou, sessão retomada e cadastro com confirmação de e-mail), **lançar** (despesa, receita a receber, transferência, validação antes de enviar, erro da API e conta inexistente), **convidar** (enviar convite, erro da API, membro sem permissão, aceitar e recusar convite recebido) e **arquivar categorias** (arquivar, reativar, sugestão ao excluir uma em uso e o que o formulário de lançamento oferece), **relatórios** (totais, comparação com o mês anterior, despesas e receitas por categoria e a navegação pelo gráfico mês a mês) e o **cartão de crédito** (cadastro com a fatura em aberto, fatura no lugar do saldo e "Pagar fatura" abrindo a transferência preenchida) os **lançamentos recorrentes** (geração ao abrir o app, "Repetir todo mês" com parcelas, listar, editar, pausar e excluir) e a **importação de extratos** (prévia, linhas desmarcadas e já importadas, categoria para todas de uma vez, IOF acompanhando a categoria da compra, bloqueio sem categoria e arquivo não reconhecido). A API simulada fica em `frontend/src/test/server.ts`; um endpoint que ela não conhece faz o teste falhar.
 
 ## Integração contínua (CI)
 

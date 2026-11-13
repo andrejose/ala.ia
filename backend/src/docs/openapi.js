@@ -27,6 +27,7 @@ export const openApiSpec = {
     { name: "Contas", description: "Contas do household, com saldo calculado" },
     { name: "Categorias", description: "Categorias de receitas e despesas" },
     { name: "Lançamentos", description: "Receitas, despesas e transferências" },
+    { name: "Recorrentes", description: "Regras de lançamentos que se repetem todo mês (aluguel, salário, parcelas)" },
     { name: "Relatórios", description: "Resumo do mês, gastos por categoria e comparação mês a mês" },
     { name: "Importação", description: "Importação de extratos bancários e faturas de cartão (CSV)" },
   ],

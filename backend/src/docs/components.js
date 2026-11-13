@@ -185,6 +185,11 @@ export const components = {
         category_id: { type: ["string", "null"], format: "uuid", description: "Obrigatória em receitas e despesas." },
         due_date: { type: "string", format: "date", example: "2026-11-06" },
         payment_date: { type: ["string", "null"], format: "date", description: "null = pendente." },
+        recurrence_id: {
+          type: ["string", "null"],
+          format: "uuid",
+          description: "Recorrência que gerou o lançamento (null = lançado à mão).",
+        },
         user_id: { type: ["string", "null"], format: "uuid", description: "Quem lançou." },
         created_at: { type: "string", format: "date-time" },
         updated_at: { type: "string", format: "date-time" },
@@ -221,6 +226,39 @@ export const components = {
           },
         },
       },
+    },
+
+    Recurrence: {
+      type: "object",
+      properties: {
+        id: { type: "string", format: "uuid" },
+        household_id: { type: "string", format: "uuid" },
+        type: { type: "string", enum: ["income", "expense", "transfer"] },
+        description: { type: "string", example: "Aluguel" },
+        amount: { type: "number", example: 1800 },
+        account_id: { type: "string", format: "uuid" },
+        destination_account_id: { type: ["string", "null"], format: "uuid" },
+        category_id: { type: ["string", "null"], format: "uuid" },
+        day_of_month: { type: "integer", example: 10, description: "31 cai no último dia em meses mais curtos." },
+        start_month: { type: "string", example: "2026-11", description: "Primeiro mês (YYYY-MM)." },
+        occurrences: { type: ["integer", "null"], example: 12, description: "Quantas vezes; null = sem fim." },
+        auto_paid: { type: "boolean", description: "Débito automático: entra pago no dia. false = entra pendente." },
+        is_active: { type: "boolean", description: "false = pausada." },
+        generated_until: { type: ["string", "null"], example: "2026-12", description: "Último mês já gerado." },
+        user_id: { type: ["string", "null"], format: "uuid", description: "Quem criou." },
+        created_at: { type: "string", format: "date-time" },
+        updated_at: { type: "string", format: "date-time" },
+      },
+    },
+
+    RecurrenceWithGenerated: {
+      allOf: [
+        { $ref: "#/components/schemas/Recurrence" },
+        {
+          type: "object",
+          properties: { generated: { type: "integer", example: 2, description: "Lançamentos criados agora." } },
+        },
+      ],
     },
 
     ImportPreview: {

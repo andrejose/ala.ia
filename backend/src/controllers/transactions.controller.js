@@ -3,7 +3,7 @@ import { transactionRuleIssues } from "../schemas/transactions.schemas.js";
 
 const columns =
   "id, household_id, type, description, amount, account_id, destination_account_id, category_id, " +
-  "due_date, payment_date, user_id, created_at, updated_at";
+  "due_date, payment_date, recurrence_id, user_id, created_at, updated_at";
 
 async function getTransaction(supabase, householdId, id) {
   const { data, error } = await supabase
