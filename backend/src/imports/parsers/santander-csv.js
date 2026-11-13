@@ -8,13 +8,14 @@ const HEADER = "data;descricao;detalhe;valor;saldo";
 export const santanderCsv = {
   id: "santander-csv",
   label: "Santander (CSV)",
+  format: "text",
   kind: "checking",
 
-  detect(text) {
+  detect({ text }) {
     return text.split("\n").some((line) => normalize(line).startsWith(HEADER));
   },
 
-  parse(text) {
+  parse({ text }) {
     const lines = text.split("\n");
     const start = lines.findIndex((line) => normalize(line).startsWith(HEADER));
     const result = [];

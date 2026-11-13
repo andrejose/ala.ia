@@ -10,6 +10,8 @@ export function withImportHashes(rows) {
     const key = `${row.date}|${row.amount.toFixed(2)}|${normalize(row.description)}`;
     const occurrence = (seen.get(key) ?? 0) + 1;
     seen.set(key, occurrence);
+    // OFX já traz o identificador do banco (FITID)
+    if (row.import_hash) return row;
     return { ...row, import_hash: createHash("sha256").update(`${key}|${occurrence}`).digest("hex") };
   });
 }
