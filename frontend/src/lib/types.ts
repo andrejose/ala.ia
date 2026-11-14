@@ -96,8 +96,14 @@ export interface ReportSummary {
   balance: { paid: number; total: number };
 }
 
+// Resumo de um período (GET /reports/summary?from=&to=): month só quando foi pedido um mês
+export type ReportPeriodSummary = Omit<ReportSummary, "month"> & { month?: string; from: string; to: string };
+
 export interface ReportByCategory {
-  month: string;
+  /** Só quando foi pedido um mês */
+  month?: string;
+  from: string;
+  to: string;
   type: CategoryType;
   total: number;
   categories: Array<{

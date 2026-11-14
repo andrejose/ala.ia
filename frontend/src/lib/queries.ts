@@ -11,6 +11,7 @@ import type {
   MyInvitation,
   ReportByCategory,
   ReportMonthly,
+  ReportPeriodSummary,
   ReportSummary,
   Recurrence,
   TransactionList,
@@ -84,24 +85,44 @@ export function useMonthSummary(householdId: string | undefined, month = current
   });
 }
 
+// Mês ("YYYY-MM") ou período (datas "YYYY-MM-DD", inclusive) de um relatório
+export type ReportRange = string | { from: string; to: string };
+
+function rangeParams(range: ReportRange) {
+  return typeof range === "string" ? { month: range } : { from: range.from, to: range.to };
+}
+
 export function useSpendingByCategory(
   householdId: string | undefined,
-  month = currentMonth(),
+  range: ReportRange = currentMonth(),
   type: CategoryType = "expense"
 ) {
+  const params = rangeParams(range);
   return useQuery({
-    queryKey: ["households", householdId, "reports", "by-category", month, type],
-    queryFn: () => api.get<ReportByCategory>(`/households/${householdId}/reports/by-category`, { month, type }),
+    queryKey: ["households", householdId, "reports", "by-category", params, type],
+    queryFn: () => api.get<ReportByCategory>(`/households/${householdId}/reports/by-category`, { ...params, type }),
     enabled: !!householdId,
+    placeholderData: keepPreviousData,
   });
 }
 
-// Resumo de cada mês, de `from` a `to` (YYYY-MM)
-export function useMonthlySeries(householdId: string | undefined, from: string, to: string) {
+// Resumo de um período (datas YYYY-MM-DD, inclusive)
+export function usePeriodSummary(householdId: string | undefined, from: string, to: string, enabled = true) {
+  return useQuery({
+    queryKey: ["households", householdId, "reports", "summary", { from, to }],
+    queryFn: () => api.get<ReportPeriodSummary>(`/households/${householdId}/reports/summary`, { from, to }),
+    enabled: !!householdId && enabled,
+    placeholderData: keepPreviousData,
+  });
+}
+
+// Resumo de cada mês, de `from` a `to`: meses (YYYY-MM) ou datas de um
+// período (YYYY-MM-DD), com o primeiro e o último mês cortados nas datas
+export function useMonthlySeries(householdId: string | undefined, from: string, to: string, enabled = true) {
   return useQuery({
     queryKey: ["households", householdId, "reports", "monthly", from, to],
     queryFn: () => api.get<ReportMonthly>(`/households/${householdId}/reports/monthly`, { from, to }),
-    enabled: !!householdId,
+    enabled: !!householdId && enabled,
     // Ao trocar de mês, mantém o gráfico anterior até o novo chegar (sem piscar)
     placeholderData: keepPreviousData,
   });

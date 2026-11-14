@@ -68,10 +68,14 @@ function initialDb() {
     members: [{ user_id: "u1", name: "Maria Silva", role: "owner", joined_at: "2026-11-01T10:00:00Z" }] as Member[],
     // Relatórios: totais por mês ("YYYY-MM") e categorias por "YYYY-MM:tipo".
     // Mês que não está aqui volta zerado.
+    // Período (from e to): totais por "from:to" e categorias por "from:to:tipo".
+    // Os pedidos de relatório ficam em reportRequests, para os testes conferirem.
     reports: {
       months: {} as Record<string, MonthTotals>,
       byCategory: {} as Record<string, ReportByCategory["categories"]>,
+      periods: {} as Record<string, MonthTotals>,
     },
+    reportRequests: [] as string[],
     // O que o app enviou nas mutações, para os testes conferirem
     requests: {
       transactions: [] as unknown[],
@@ -99,7 +103,11 @@ export let db = initialDb();
 
 // Resumo de um mês no formato da API, a partir de db.reports.months
 function monthReport(month: string): ReportSummary {
-  const totals = db.reports.months[month] ?? { income: { paid: 0, pending: 0 }, expense: { paid: 0, pending: 0 } };
+  return totalsOf(db.reports.months[month], month);
+}
+
+function totalsOf(found: MonthTotals | undefined, month: string): ReportSummary {
+  const totals = found ?? { income: { paid: 0, pending: 0 }, expense: { paid: 0, pending: 0 } };
   const income = { ...totals.income, total: totals.income.paid + totals.income.pending };
   const expense = { ...totals.expense, total: totals.expense.paid + totals.expense.pending };
   return { month, income, expense, balance: { paid: income.paid - expense.paid, total: income.total - expense.total } };
@@ -209,21 +217,37 @@ const handlers = [
     db.transactions.push(created);
     return HttpResponse.json(created, { status: 201 });
   }),
-  http.get("*/api/households/:id/reports/summary", ({ request }) =>
-    HttpResponse.json(monthReport(new URL(request.url).searchParams.get("month") ?? ""))
-  ),
+  http.get("*/api/households/:id/reports/summary", ({ request }) => {
+    const url = new URL(request.url);
+    db.reportRequests.push(`summary${url.search}`);
+    const params = url.searchParams;
+    const from = params.get("from");
+    const to = params.get("to");
+    if (from && to) {
+      const { month: _month, ...totals } = totalsOf(db.reports.periods[`${from}:${to}`], "");
+      return HttpResponse.json({ from, to, ...totals });
+    }
+    return HttpResponse.json(monthReport(params.get("month") ?? ""));
+  }),
   http.get("*/api/households/:id/reports/by-category", ({ request }) => {
-    const params = new URL(request.url).searchParams;
-    const month = params.get("month") ?? "";
+    const url = new URL(request.url);
+    db.reportRequests.push(`by-category${url.search}`);
+    const params = url.searchParams;
+    const month = params.get("month");
+    const from = params.get("from");
+    const to = params.get("to");
     const type = params.get("type") ?? "expense";
-    const categories = db.reports.byCategory[`${month}:${type}`] ?? [];
-    return HttpResponse.json({ month, type, total: categories.reduce((sum, c) => sum + c.total, 0), categories });
+    const key = month ? `${month}:${type}` : `${from}:${to}:${type}`;
+    const categories = db.reports.byCategory[key] ?? [];
+    return HttpResponse.json({ ...(month ? { month } : { from, to }), type, total: categories.reduce((sum, c) => sum + c.total, 0), categories });
   }),
   http.get("*/api/households/:id/reports/monthly", ({ request }) => {
-    const params = new URL(request.url).searchParams;
-    const from = params.get("from") ?? "";
-    const to = params.get("to") ?? "";
-    return HttpResponse.json({ from, to, months: monthsBetween(from, to).map(monthReport) });
+    const url = new URL(request.url);
+    db.reportRequests.push(`monthly${url.search}`);
+    const from = url.searchParams.get("from") ?? "";
+    const to = url.searchParams.get("to") ?? "";
+    // Com datas, os meses que o período cobre
+    return HttpResponse.json({ from, to, months: monthsBetween(from.slice(0, 7), to.slice(0, 7)).map(monthReport) });
   }),
   http.post("*/api/households/:id/imports/preview", async ({ request }) => {
     const accountId = new URL(request.url).searchParams.get("account_id");

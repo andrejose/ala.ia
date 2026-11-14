@@ -57,3 +57,30 @@ export function shortMonthName(yearMonth: string): string {
   const [year, month] = yearMonth.split("-").map(Number);
   return new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(year, month - 1, 1)).replace(".", "");
 }
+
+// Datas "YYYY-MM-DD" sem passar por fuso horário (conta em UTC)
+function toUtc(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return Date.UTC(year, month - 1, day);
+}
+
+const DAY_MS = 86_400_000;
+
+// "2026-11-15", -29 -> "2026-10-17"
+export function addDays(isoDate: string, days: number): string {
+  return new Date(toUtc(isoDate) + days * DAY_MS).toISOString().slice(0, 10);
+}
+
+// Quantos dias de `from` a `to`, contando os dois: "2026-11-01" a "2026-11-30" -> 30
+export function daysBetween(from: string, to: string): number {
+  return Math.round((toUtc(to) - toUtc(from)) / DAY_MS) + 1;
+}
+
+// "2026-11-15", -3 -> "2026-08-15" (no fim do mês, cai no último dia que existe)
+export function addMonthsToDate(isoDate: string, months: number): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  const last = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(day, last));
+  return target.toISOString().slice(0, 10);
+}

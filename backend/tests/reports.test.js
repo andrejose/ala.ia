@@ -38,6 +38,8 @@ describe("GET /reports/summary", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
       month: "2026-10",
+      from: "2026-10-01",
+      to: "2026-10-31",
       income: { paid: 5000, pending: 300, total: 5300 },
       expense: { paid: 2050.5, pending: 100, total: 2150.5 },
       balance: { paid: 2949.5, total: 3149.5 },
@@ -151,6 +153,65 @@ describe("GET /reports/monthly", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.months).toHaveLength(24);
+  });
+});
+
+describe("Relatórios por período (from e to)", () => {
+  const get = (path) => request(app).get(`${user.base}/reports/${path}`).set(user.authHeader);
+
+  it("resumo do período, com o primeiro e o último dia incluídos", async () => {
+    const res = await get("summary?from=2026-09-30&to=2026-10-12");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      from: "2026-09-30",
+      to: "2026-10-12",
+      income: { paid: 5000, pending: 0, total: 5000 },
+      expense: { paid: 3049.5, pending: 0, total: 3049.5 },
+      balance: { paid: 1950.5, total: 1950.5 },
+    });
+  });
+
+  it("por categoria no período", async () => {
+    const res = await get("by-category?from=2026-09-30&to=2026-10-12");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ from: "2026-09-30", to: "2026-10-12", type: "expense", total: 3049.5 });
+    expect(res.body.month).toBeUndefined();
+    expect(res.body.categories.map(({ name, total }) => [name, total])).toEqual([
+      ["Aluguel", 2799],
+      ["Alimentação", 250.5],
+    ]);
+  });
+
+  it("mês a mês do período, com o primeiro e o último mês cortados nas datas", async () => {
+    const res = await get("monthly?from=2026-09-30&to=2026-11-01");
+
+    expect(res.status).toBe(200);
+    expect(res.body.from).toBe("2026-09-30");
+    expect(res.body.to).toBe("2026-11-01");
+    expect(res.body.months.map((m) => [m.month, m.income.total, m.expense.total])).toEqual([
+      ["2026-09", 0, 999],
+      ["2026-10", 5300, 2150.5],
+      ["2026-11", 0, 999],
+    ]);
+  });
+
+  it("recusa mês junto com período, período pela metade, invertido ou longo demais (400)", async () => {
+    const cases = {
+      "summary?month=2026-10&from=2026-10-01&to=2026-10-31": "month",
+      "summary?from=2026-10-01": "to",
+      "by-category?to=2026-10-31": "from",
+      "summary?from=2026-11-01&to=2026-10-01": "from",
+      "summary?from=2024-01-01&to=2026-10-31": "from",
+      "monthly?from=2026-09&to=2026-11-01": "from",
+      "monthly?to=2026-11-01": "from",
+    };
+    for (const [path, field] of Object.entries(cases)) {
+      const res = await get(path);
+      expect(res.status, path).toBe(400);
+      expect(res.body.error.details.map((d) => d.path), path).toContain(field);
+    }
   });
 });
 
