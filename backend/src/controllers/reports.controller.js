@@ -19,23 +19,30 @@ function summaryTotals(row) {
   };
 }
 
+// Mês pedido ("YYYY-MM") e as datas do período, para devolver na resposta
+function periodOf({ month, from, to }) {
+  return { ...(month && { month: month.slice(0, 7) }), from, to };
+}
+
 // GET /households/:householdId/reports/summary?month=YYYY-MM
+// GET /households/:householdId/reports/summary?from=YYYY-MM-DD&to=YYYY-MM-DD
 export async function summary(req, res) {
-  const { month } = req.validated.query;
+  const { from, to } = req.validated.query;
 
   const { data, error } = await req.supabase
-    .rpc("report_monthly_summary", { p_household_id: req.household.id, p_month: month })
+    .rpc("report_period_summary", { p_household_id: req.household.id, p_from: from, p_to: to })
     .single();
   if (error) throw error;
 
-  res.status(200).json({ month: month.slice(0, 7), ...summaryTotals(data) });
+  res.status(200).json({ ...periodOf(req.validated.query), ...summaryTotals(data) });
 }
 
 // GET /households/:householdId/reports/monthly?from=YYYY-MM&to=YYYY-MM
+// GET /households/:householdId/reports/monthly?from=YYYY-MM-DD&to=YYYY-MM-DD (meses do período, cortados nas datas)
 export async function monthly(req, res) {
-  const { from, to } = req.validated.query;
+  const { period, from, to } = req.validated.query;
 
-  const { data, error } = await req.supabase.rpc("report_monthly_series", {
+  const { data, error } = await req.supabase.rpc(period ? "report_period_series" : "report_monthly_series", {
     p_household_id: req.household.id,
     p_from: from,
     p_to: to,
@@ -43,19 +50,21 @@ export async function monthly(req, res) {
   if (error) throw error;
 
   res.status(200).json({
-    from: from.slice(0, 7),
-    to: to.slice(0, 7),
+    from: period ? from : from.slice(0, 7),
+    to: period ? to : to.slice(0, 7),
     months: data.map((row) => ({ month: row.month.slice(0, 7), ...summaryTotals(row) })),
   });
 }
 
 // GET /households/:householdId/reports/by-category?month=YYYY-MM&type=expense
+// GET /households/:householdId/reports/by-category?from=YYYY-MM-DD&to=YYYY-MM-DD&type=expense
 export async function byCategory(req, res) {
-  const { month, type } = req.validated.query;
+  const { from, to, type } = req.validated.query;
 
-  const { data, error } = await req.supabase.rpc("report_by_category", {
+  const { data, error } = await req.supabase.rpc("report_period_by_category", {
     p_household_id: req.household.id,
-    p_month: month,
+    p_from: from,
+    p_to: to,
     p_type: type,
   });
   if (error) throw error;
@@ -72,7 +81,7 @@ export async function byCategory(req, res) {
   }));
 
   res.status(200).json({
-    month: month.slice(0, 7),
+    ...periodOf(req.validated.query),
     type,
     total: round(categories.reduce((sum, c) => sum + c.total, 0)),
     categories,

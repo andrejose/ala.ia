@@ -214,7 +214,9 @@ export const components = {
     ReportSummary: {
       type: "object",
       properties: {
-        month: { type: "string", example: "2026-10" },
+        month: { type: "string", example: "2026-10", description: "Só quando foi pedido um mês." },
+        from: { type: "string", format: "date", example: "2026-10-01", description: "Primeiro dia do período (ou do mês)." },
+        to: { type: "string", format: "date", example: "2026-10-31", description: "Último dia do período (ou do mês)." },
         income: { $ref: "#/components/schemas/PaidPendingTotal" },
         expense: { $ref: "#/components/schemas/PaidPendingTotal" },
         balance: {
@@ -374,7 +376,9 @@ export const components = {
     ReportByCategory: {
       type: "object",
       properties: {
-        month: { type: "string", example: "2026-10" },
+        month: { type: "string", example: "2026-10", description: "Só quando foi pedido um mês." },
+        from: { type: "string", format: "date", example: "2026-10-01" },
+        to: { type: "string", format: "date", example: "2026-10-31" },
         type: { type: "string", enum: ["income", "expense"] },
         total: { type: "number", example: 2150.5 },
         categories: {

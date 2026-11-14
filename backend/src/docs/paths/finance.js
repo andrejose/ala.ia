@@ -7,7 +7,13 @@ import {
   updateRecurrenceSchema,
 } from "../../schemas/recurrences.schemas.js";
 import { commitImportSchema, MAX_IMPORT_FILE, MAX_IMPORT_ROWS, previewQuery } from "../../schemas/imports.schemas.js";
-import { byCategoryQuery, MAX_SERIES_MONTHS, monthlyQueryFields, summaryQuery } from "../../schemas/reports.schemas.js";
+import {
+  byCategoryFields,
+  MAX_SERIES_MONTHS,
+  monthlyQueryFields,
+  reportSummaryFields,
+  summaryQuery,
+} from "../../schemas/reports.schemas.js";
 import {
   createTransactionSchema,
   listTransactionsQuery,
@@ -177,11 +183,12 @@ export const financePaths = {
     parameters: [householdIdParam],
     get: {
       tags: ["Relatórios"],
-      summary: "Resumo do mês",
+      summary: "Resumo do mês ou de um período",
       description:
-        "Receitas, despesas e resultado do mês, separando pagos e pendentes. " +
-        "O mês considerado é o do vencimento (`due_date`). Transferências não entram.",
-      parameters: queryParams(summaryQuery),
+        "Receitas, despesas e resultado, separando pagos e pendentes, de um mês (`month`) ou de um período " +
+        "(`from` e `to`, datas inclusive, até " + MAX_SERIES_MONTHS + " meses). Sem nada, o mês atual. Vale a data " +
+        "de vencimento (`due_date`). Transferências não entram.",
+      parameters: queryParams(reportSummaryFields),
       responses: { 200: json("Resumo.", ref("ReportSummary")), 400: badRequest, 401: unauthorized, 404: notFound },
     },
   },
@@ -190,9 +197,11 @@ export const financePaths = {
     parameters: [householdIdParam],
     get: {
       tags: ["Relatórios"],
-      summary: "Total por categoria no mês",
-      description: "Ordenado do maior para o menor total. O mês considerado é o do vencimento (`due_date`).",
-      parameters: queryParams(byCategoryQuery),
+      summary: "Total por categoria no mês ou num período",
+      description:
+        "Ordenado do maior para o menor total, de um mês (`month`) ou de um período (`from` e `to`, datas " +
+        "inclusive). Vale a data de vencimento (`due_date`).",
+      parameters: queryParams(byCategoryFields),
       responses: { 200: json("Totais por categoria.", ref("ReportByCategory")), 400: badRequest, 401: unauthorized, 404: notFound },
     },
   },
@@ -204,7 +213,9 @@ export const financePaths = {
       summary: "Resumo mês a mês",
       description:
         "O resumo de cada mês do intervalo, do mais antigo para o mais recente, inclusive os meses sem " +
-        `lançamentos (zerados). Padrão: os últimos 6 meses. No máximo ${MAX_SERIES_MONTHS} meses.`,
+        `lançamentos (zerados). Padrão: os últimos 6 meses. No máximo ${MAX_SERIES_MONTHS} meses. ` +
+        "Com datas (`from` e `to` em YYYY-MM-DD), traz os meses que o período cobre, com o primeiro e o último " +
+        "cortados nas datas do período.",
       parameters: queryParams(monthlyQueryFields),
       responses: { 200: json("Meses do intervalo.", ref("ReportMonthly")), 400: badRequest, 401: unauthorized, 404: notFound },
     },

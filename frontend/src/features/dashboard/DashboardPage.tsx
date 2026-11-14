@@ -280,7 +280,7 @@ function SpendingByCategory({ householdId }: { householdId: string }) {
         {isLoading && [0, 1, 2].map((i) => <Skeleton key={i} className="h-9 w-full" />)}
 
         {data && data.categories.length === 0 && (
-          <p className="text-sm text-muted">Nenhuma despesa em {monthName(data.month)} ainda.</p>
+          <p className="text-sm text-muted">Nenhuma despesa em {monthName(data.month ?? currentMonth())} ainda.</p>
         )}
 
         {data?.categories.map((c) => {

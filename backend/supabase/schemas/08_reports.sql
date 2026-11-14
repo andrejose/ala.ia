@@ -123,3 +123,118 @@ as $$
   group by m.month
   order by m.month;
 $$;
+
+-- =============================================================================
+-- Relatórios por período (data inicial e final, inclusive). Mesmas regras dos
+-- relatórios do mês: vale a data de vencimento, pendentes incluídos e
+-- transferências fora. Com o período de um mês inteiro, dão o mesmo que as
+-- funções do mês.
+-- =============================================================================
+
+-- Uso: supabase.rpc('report_period_summary', { p_household_id, p_from: '2026-09-01', p_to: '2026-11-15' })
+create or replace function public.report_period_summary(
+  p_household_id uuid,
+  p_from         date,
+  p_to           date
+)
+returns table (
+  income_paid     numeric,
+  income_pending  numeric,
+  expense_paid    numeric,
+  expense_pending numeric
+)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select
+    coalesce(sum(amount) filter (where type = 'income'  and payment_date is not null), 0),
+    coalesce(sum(amount) filter (where type = 'income'  and payment_date is null),     0),
+    coalesce(sum(amount) filter (where type = 'expense' and payment_date is not null), 0),
+    coalesce(sum(amount) filter (where type = 'expense' and payment_date is null),     0)
+  from public.transactions
+  where household_id = p_household_id
+    and due_date between p_from and p_to;
+$$;
+
+-- Uso: supabase.rpc('report_period_by_category', { p_household_id, p_from, p_to, p_type: 'expense' })
+create or replace function public.report_period_by_category(
+  p_household_id uuid,
+  p_from         date,
+  p_to           date,
+  p_type         public.transaction_type default 'expense'
+)
+returns table (
+  category_id       uuid,
+  name              varchar,
+  color             varchar,
+  icon              varchar,
+  total             numeric,
+  paid              numeric,
+  pending           numeric,
+  transaction_count bigint
+)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select
+    c.id,
+    c.name,
+    c.color,
+    c.icon,
+    sum(t.amount),
+    coalesce(sum(t.amount) filter (where t.payment_date is not null), 0),
+    coalesce(sum(t.amount) filter (where t.payment_date is null),     0),
+    count(*)
+  from public.transactions t
+  join public.categories c on c.id = t.category_id
+  where t.household_id = p_household_id
+    and t.type = p_type
+    and t.due_date between p_from and p_to
+  group by c.id, c.name, c.color, c.icon
+  order by sum(t.amount) desc, c.name;
+$$;
+
+-- Mês a mês dentro do período: um resumo por mês, com o primeiro e o último
+-- mês cortados nas datas do período (ex.: de 10/09 a 15/11, setembro conta a
+-- partir do dia 10 e novembro até o dia 15). Meses sem lançamentos vêm zerados.
+-- Uso: supabase.rpc('report_period_series', { p_household_id, p_from, p_to })
+create or replace function public.report_period_series(
+  p_household_id uuid,
+  p_from         date,
+  p_to           date
+)
+returns table (
+  month           date,
+  income_paid     numeric,
+  income_pending  numeric,
+  expense_paid    numeric,
+  expense_pending numeric
+)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select
+    m.month::date,
+    coalesce(sum(t.amount) filter (where t.type = 'income'  and t.payment_date is not null), 0),
+    coalesce(sum(t.amount) filter (where t.type = 'income'  and t.payment_date is null),     0),
+    coalesce(sum(t.amount) filter (where t.type = 'expense' and t.payment_date is not null), 0),
+    coalesce(sum(t.amount) filter (where t.type = 'expense' and t.payment_date is null),     0)
+  from generate_series(
+         date_trunc('month', p_from::timestamp),
+         date_trunc('month', p_to::timestamp),
+         interval '1 month'
+       ) as m(month)
+  left join public.transactions t
+    on t.household_id = p_household_id
+   and t.due_date between greatest(m.month::date, p_from)
+                      and least((m.month + interval '1 month - 1 day')::date, p_to)
+  where p_from <= p_to
+  group by m.month
+  order by m.month;
+$$;

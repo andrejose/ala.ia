@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReportByCategory } from "../../lib/types";
 import { renderApp } from "../../test/renderApp";
@@ -106,5 +106,76 @@ describe("Tela de relatórios", () => {
     expect(await screen.findByRole("heading", { name: "Dezembro de 2026" })).toBeInTheDocument();
     expect(await screen.findByText("Nenhuma despesa em dezembro.")).toBeInTheDocument();
     await vi.waitFor(() => expect(chartMonths()).toEqual(["jul", "ago", "set", "out", "nov", "dez"]));
+  });
+
+  it("no modo Período, abre nos últimos 30 dias e compara com os 30 dias anteriores", async () => {
+    db.reports.periods = {
+      "2026-10-17:2026-11-15": { income: { paid: 5000, pending: 0 }, expense: { paid: 1500, pending: 300 } },
+      "2026-09-17:2026-10-16": { income: { paid: 5000, pending: 0 }, expense: { paid: 1200, pending: 0 } },
+    };
+    db.reports.byCategory["2026-10-17:2026-11-15:expense"] = [row("Mercado", 1800)];
+    const { user } = renderApp("/relatorios", { loggedIn: true });
+
+    await screen.findByRole("group", { name: "Receitas e despesas por mês" });
+    await user.click(screen.getByRole("radio", { name: "Período" }));
+
+    expect(await screen.findByText("17/10/2026 a 15/11/2026 · 30 dias")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Últimos 30 dias" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("De")).toHaveValue("2026-10-17");
+    expect(screen.getByLabelText("Até")).toHaveValue("2026-11-15");
+
+    const totals = screen.getByRole("region", { name: "Totais do período" });
+    await vi.waitFor(() => expect(totals).toHaveTextContent(/Saiu\s*R\$\s1\.800,00\s*R\$\s300,00 a pagar/));
+    expect(screen.getByText(/Você gastou/)).toHaveTextContent(/R\$\s600,00 a mais que nos 30 dias anteriores \(\+50%\)\./);
+
+    // O período cobre outubro e novembro: o gráfico mostra os dois meses
+    await vi.waitFor(() => expect(chartMonths()).toEqual(["out", "nov"]));
+    expect(await screen.findByRole("list", { name: "Despesas por categoria" })).toHaveTextContent("Mercado");
+    expect(db.reportRequests).toContain("by-category?from=2026-10-17&to=2026-11-15&type=expense");
+  });
+
+  it("o período fica no endereço; dentro de um mês só, não há gráfico", async () => {
+    db.reports.periods = { "2026-11-01:2026-11-10": { income: { paid: 0, pending: 0 }, expense: { paid: 90, pending: 0 } } };
+    renderApp("/relatorios?de=2026-11-01&ate=2026-11-10", { loggedIn: true });
+
+    expect(await screen.findByRole("radio", { name: "Período" })).toHaveAttribute("aria-checked", "true");
+    const totals = await screen.findByRole("region", { name: "Totais do período" });
+    await vi.waitFor(() => expect(totals).toHaveTextContent(/Saiu\s*R\$\s90,00/));
+    expect(screen.queryByRole("group", { name: "Receitas e despesas por mês" })).not.toBeInTheDocument();
+    expect(db.reportRequests.some((r) => r.startsWith("monthly"))).toBe(false);
+    expect(await screen.findByText("Nenhuma despesa no período.")).toBeInTheDocument();
+  });
+
+  it("atalho e datas trocam o período; data inicial depois da final é recusada sem consultar", async () => {
+    const { user } = renderApp("/relatorios?de=2026-11-01&ate=2026-11-10", { loggedIn: true });
+
+    await user.click(await screen.findByRole("button", { name: "Ano passado" }));
+    expect(await screen.findByText("01/01/2025 a 31/12/2025 · 365 dias")).toBeInTheDocument();
+    await vi.waitFor(() => expect(chartMonths()).toHaveLength(12));
+
+    const before = db.reportRequests.length;
+    fireEvent.change(screen.getByLabelText("De"), { target: { value: "2026-01-01" } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("A data inicial precisa ser antes da final.");
+    expect(screen.queryByRole("region", { name: "Totais do período" })).not.toBeInTheDocument();
+    expect(db.reportRequests.slice(before).filter((r) => r.includes("2026-01-01"))).toEqual([]);
+  });
+
+  it("tocar num mês do gráfico do período abre aquele mês inteiro", async () => {
+    const { user } = renderApp("/relatorios?de=2026-09-10&ate=2026-11-15", { loggedIn: true });
+
+    await vi.waitFor(() => expect(chartMonths()).toEqual(["set", "out", "nov"]));
+    await user.click(screen.getByRole("button", { name: /^Outubro de 2026/ }));
+
+    expect(await screen.findByRole("heading", { name: "Outubro de 2026" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Mês" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("region", { name: "Totais do mês" })).toBeInTheDocument();
+  });
+
+  it("voltar para o modo Mês volta ao mês atual", async () => {
+    const { user } = renderApp("/relatorios?de=2026-11-01&ate=2026-11-10", { loggedIn: true });
+
+    await user.click(await screen.findByRole("radio", { name: "Mês" }));
+    expect(await screen.findByRole("heading", { name: "Novembro de 2026" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("De")).not.toBeInTheDocument();
   });
 });
