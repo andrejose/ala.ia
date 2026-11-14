@@ -34,6 +34,7 @@ COPY --from=frontend /app/frontend/dist /app/frontend/dist
 # Sem root dentro do contêiner
 USER node
 EXPOSE 3001
+# Usa a mesma PORT do app: o Coolify (ou quem rodar o contêiner) pode trocá-la
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3001/health > /dev/null || exit 1
+  CMD wget -qO- "http://127.0.0.1:${PORT}/health" > /dev/null || exit 1
 CMD ["node", "src/server.js"]

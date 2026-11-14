@@ -58,11 +58,11 @@ Antes disso o Coolify não consegue emitir o certificado HTTPS.
    - **Build Pack: Dockerfile** (o Coolify acha o `Dockerfile` da raiz)
 2. Em **Configuration → General**:
    - **Domains:** `https://ala.andrejose.com.br`. Com `https://`, o Coolify pede o certificado sozinho.
-   - **Ports Exposes:** `3001`
+   - **Ports Exposes:** `3001`. Tem que ser a mesma porta em que o app escuta: a variável `PORT`, que vale 3001 na imagem. Se o Coolify ou você definir `PORT` com outro valor (ex.: 3000), use esse mesmo número aqui. O teste de saúde da imagem segue a `PORT` sozinho.
 3. Em **Environment Variables**, adicione as duas variáveis do Supabase de produção. Os valores estão no painel do Supabase, em **Project Settings → API Keys**.
    - `SUPABASE_URL`: `https://<id-do-projeto>.supabase.co`
    - `SUPABASE_PUBLISHABLE_KEY`: a chave **publishable**, nunca a `secret` ou a `service_role`
-4. Em **Health Check**, ligue a verificação: caminho `/health`, porta `3001`.
+4. **Health Check:** a imagem já traz o teste de saúde (`HEALTHCHECK` em `/health`, na porta da `PORT`), e o Coolify usa esse. Se ligar também o do painel, use o caminho `/health` e a mesma porta.
 5. Clique em **Deploy** e acompanhe em **Deployments**. O build leva alguns minutos na primeira vez.
 
 **Deploy automático (opcional):** repositório público não avisa o Coolify
@@ -88,6 +88,12 @@ Email**): ela é necessária para o aceite de convites ser seguro.
 - Entrar, lançar e recarregar a página numa tela interna (ex.: `/lancamentos`) continua funcionando.
 - `https://ala.andrejose.com.br/docs` abre o Swagger.
 - Em **Logs** no Coolify aparecem as linhas JSON das requisições.
+
+## Se o deploy falhar
+
+- **"New container is unhealthy" com "Connection refused":** o app está escutando numa porta e o teste de saúde está batendo em outra. Nos logs do contêiner aparece "Servidor rodando na porta N": confira se **Ports Exposes** e a variável `PORT` usam esse mesmo N.
+- **"Variáveis de ambiente inválidas ou ausentes":** falta `SUPABASE_URL` ou `SUPABASE_PUBLISHABLE_KEY` em **Environment Variables**.
+- **Sem cadeado ou erro de certificado:** o DNS ainda não aponta para a VPS, ou o domínio em **Domains** está sem o `https://`.
 
 ## Atualizações
 
