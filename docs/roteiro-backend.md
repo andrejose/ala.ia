@@ -47,6 +47,7 @@ Atualize o status de cada fase conforme avançarmos.
 | `AL002` – convite expirado, já respondido ou cancelado | 410 | `INVITATION_UNAVAILABLE` |
 | `22023` – regra violada em RPC (ex.: convidar o próprio e-mail) | 400 | `BUSINESS_RULE` |
 | Limite de requisições do Supabase Auth | 429 | `RATE_LIMITED` |
+| Supabase fora do alcance ("fetch failed") ou chave recusada ("Invalid API key") | 503 | `SERVICE_UNAVAILABLE` (o motivo vai para o log) |
 | Qualquer outro | 500 | `INTERNAL_ERROR` |
 
 > **Atenção (404 com RLS):** `update`/`delete` em linha que o RLS esconde **não dá erro** no supabase-js, só afeta 0 linhas. Sempre encadear `.select().single()` para receber `PGRST116` → 404.

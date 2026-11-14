@@ -99,8 +99,42 @@ export function fromAuthError(error) {
   return null;
 }
 
+// -----------------------------------------------------------------------------
+// Supabase fora do alcance ou mal configurado: endereço errado, rede da VPS
+// sem saída, Supabase fora do ar ou chave recusada. Para quem usa o app é a
+// mesma coisa (503: tente de novo), mas o motivo vai para o log.
+// Formatos que o supabase-js devolve:
+//   Auth:  AuthRetryableFetchError, status 0, "fetch failed"
+//   Dados: { code: "", message: "TypeError: fetch failed", details: "... getaddrinfo ENOTFOUND ..." }
+//   Chave recusada (produção): "Invalid API key"
+// -----------------------------------------------------------------------------
+export function unavailableError(error) {
+  const message = String(error?.message ?? "");
+  const unreachable =
+    error?.name === "AuthRetryableFetchError" ||
+    (error?.name === "TypeError" && /fetch failed/i.test(message)) ||
+    (error?.code === "" && /fetch failed/i.test(message));
+  const badKey = /invalid api key/i.test(message);
+  if (!unreachable && !badKey) return null;
+
+  // Causa da falha de rede, quando vem: "getaddrinfo ENOTFOUND", "ECONNREFUSED"...
+  const cause = /Caused by: [^\n]*?(getaddrinfo \w+|E[A-Z_]{3,})/.exec(String(error?.details ?? ""))?.[1];
+  const reason = badKey
+    ? "O Supabase recusou a chave (confira SUPABASE_PUBLISHABLE_KEY)"
+    : `Não foi possível conectar ao Supabase (confira SUPABASE_URL e a rede): ${cause ?? message}`;
+  const httpError = new HttpError(
+    503,
+    "SERVICE_UNAVAILABLE",
+    "Não foi possível falar com o banco de dados agora. Tente de novo em instantes."
+  );
+  httpError.reason = reason; // só para o log; não vai na resposta
+  return httpError;
+}
+
 // Converte qualquer erro vindo do supabase-js em HttpError (ou null se desconhecido)
 export function fromSupabaseError(error) {
+  const unavailable = unavailableError(error);
+  if (unavailable) return unavailable;
   if (isAuthError(error)) return fromAuthError(error);
   if (error && typeof error.code === "string") return fromPostgrestError(error);
   return null;

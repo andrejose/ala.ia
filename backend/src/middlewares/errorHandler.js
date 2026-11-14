@@ -26,6 +26,11 @@ export function errorHandler(err, req, res, next) {
     httpError = new HttpError(500, "INTERNAL_ERROR", "Erro interno do servidor.");
   }
 
+  // Falha do lado do servidor que já tem motivo conhecido (ex.: Supabase fora do alcance)
+  if (httpError.reason) {
+    console.error(JSON.stringify({ time: new Date().toISOString(), level: "error", code: httpError.code, reason: httpError.reason }));
+  }
+
   const body = { error: { code: httpError.code, message: httpError.message } };
   if (httpError.details !== undefined) body.error.details = httpError.details;
 
