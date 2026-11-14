@@ -138,6 +138,20 @@ jobs:
           curl -fsS -H "Accept: text/html" http://localhost:3001/lancamentos | grep -q '<div id="root">'
           curl -fsSI http://localhost:3001/ | grep -qi "content-security-policy"
 
+      # O Coolify pode passar outra PORT: o HEALTHCHECK da imagem precisa seguir a variável
+      - name: Confere o HEALTHCHECK com outra PORT
+        run: |
+          docker run -d --name ala-porta -e PORT=3000             -e SUPABASE_URL=http://supabase.invalid             -e SUPABASE_PUBLISHABLE_KEY=ci             ala-ia:ci
+          for i in $(seq 1 30); do
+            status=$(docker inspect --format "{{.State.Health.Status}}" ala-porta)
+            if [ "$status" != "starting" ]; then break; fi
+            sleep 3
+          done
+          echo "Saúde do contêiner com PORT=3000: $status"
+          test "$status" = "healthy"
+
       - name: Mostra os logs do contêiner se algo falhar
         if: failure()
-        run: docker logs ala
+        run: |
+          docker logs ala || true
+          docker logs ala-porta || true
