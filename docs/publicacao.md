@@ -92,6 +92,7 @@ Email**): ela é necessária para o aceite de convites ser seguro.
 ## Se o deploy falhar
 
 - **"New container is unhealthy" com "Connection refused":** o app está escutando numa porta e o teste de saúde está batendo em outra. Nos logs do contêiner aparece "Servidor rodando na porta N": confira se **Ports Exposes** e a variável `PORT` usam esse mesmo N.
+- **Telas abrem, mas login e cadastro respondem 503 ("Não foi possível falar com o banco de dados"):** o contêiner não consegue falar com o Supabase. Em **Logs** aparece uma linha com `"code":"SERVICE_UNAVAILABLE"` e o motivo. Pode ser a `SUPABASE_URL` errada ou inalcançável (ex.: `getaddrinfo ENOTFOUND`, `ECONNREFUSED`) ou a `SUPABASE_PUBLISHABLE_KEY` recusada. Corrija a variável e faça **Redeploy**.
 - **"Variáveis de ambiente inválidas ou ausentes":** falta `SUPABASE_URL` ou `SUPABASE_PUBLISHABLE_KEY` em **Environment Variables**.
 - **Sem cadeado ou erro de certificado:** o DNS ainda não aponta para a VPS, ou o domínio em **Domains** está sem o `https://`.
 

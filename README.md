@@ -191,7 +191,7 @@ Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de s
 
 ### Backend
 
-São **146 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+São **151 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
 ```bash
 cd backend
@@ -200,7 +200,7 @@ cp .env.test.example .env.test   # preencha o PUBLISHABLE_KEY de `npx supabase s
 npm test
 ```
 
-Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (401) e o bloqueio de acesso ao espaço de outra pessoa (RLS). Também cobrem cálculo de saldo, relatórios, recorrências (gerar, editar, pausar e excluir), orçamento, a leitura dos extratos de cada banco em CSV, PDF e OFX (com arquivos fictícios no formato real; os PDFs são gerados no teste, no layout de cada banco), duplicatas na importação, regra do último dono, fluxo completo de convites, regras do banco acessado direto (sem a API) e um teste que garante que **toda rota da API está documentada** no Swagger. As peças de produção também têm teste: cabeçalhos de segurança, API em `/api`, limite de tentativas no login (429), log das requisições e o frontend entregue pelo backend.
+Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (401) e o bloqueio de acesso ao espaço de outra pessoa (RLS). Também cobrem cálculo de saldo, relatórios, recorrências (gerar, editar, pausar e excluir), orçamento, a leitura dos extratos de cada banco em CSV, PDF e OFX (com arquivos fictícios no formato real; os PDFs são gerados no teste, no layout de cada banco), duplicatas na importação, regra do último dono, fluxo completo de convites, regras do banco acessado direto (sem a API) e um teste que garante que **toda rota da API está documentada** no Swagger. As peças de produção também têm teste: cabeçalhos de segurança, API em `/api`, limite de tentativas no login (429), log das requisições, o frontend entregue pelo backend e o 503 quando o Supabase está fora do alcance.
 
 ### Frontend
 
