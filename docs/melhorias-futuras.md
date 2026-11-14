@@ -41,11 +41,10 @@ Limitações do cartão que o rateio ou outras melhorias resolveriam:
 - **Mais lançamentos:** cada compra vira um lançamento. A importação de extratos (seção 1) compensa isso, já que o Nubank exporta a fatura do cartão em CSV.
 - **Histórico:** faturas já lançadas como despesa única na corrente ficam como estão.
 
-## 3. Publicação
+## 3. Depois da publicação
 
-Hoje o projeto roda só localmente. Para publicar:
+A publicação está em [publicacao.md](publicacao.md) (um contêiner no Coolify, com helmet, limite de tentativas e logs). Ideias para depois:
 
-- Liberar CORS no backend para o domínio do frontend.
-- Hospedar o backend (Render, Railway ou Fly.io) e o frontend (Vercel ou Netlify), com as variáveis do Supabase remoto.
-- Reforços de produção: `helmet`, limite de requisições nas rotas de autenticação e logs estruturados.
-- Manter a confirmação de e-mail ligada no Supabase Auth (necessária para o aceite de convites ser seguro).
+- **Sessão em cookie `httpOnly`** em vez do `refresh_token` no `localStorage`, agora que API e telas estão no mesmo endereço.
+- **Monitoramento:** um aviso (por e-mail ou Telegram) quando o `/health` cair, e os logs JSON enviados para um coletor.
+- **Backup do banco** além do que o plano do Supabase oferece.

@@ -8,6 +8,12 @@ const envSchema = z.object({
   SUPABASE_URL: z.url(),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(3001),
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  // Pasta com o frontend já compilado (frontend/dist). Definida, o backend
+  // também entrega as telas, no mesmo endereço da API (ver o Dockerfile).
+  STATIC_DIR: z.string().min(1).optional(),
+  // Tentativas de login, cadastro e renovação de sessão por IP a cada 15 minutos
+  AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(20),
 });
 
 const parsed = envSchema.safeParse(process.env);
