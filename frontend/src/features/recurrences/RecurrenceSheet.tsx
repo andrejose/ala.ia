@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { FormError, MoneyField, SelectField, Toggle } from "../../components/fields";
-import { Sheet } from "../../components/Sheet";
+import { Sheet, useUnsavedChanges } from "../../components/Sheet";
 import { Button, TextField } from "../../components/ui";
 import { api } from "../../lib/api";
 import { moneyToInput, parseMoney } from "../../lib/money";
@@ -39,6 +39,8 @@ function RecurrenceForm({ householdId, recurrence, onDone }: { householdId: stri
   const [categoryId, setCategoryId] = useState(recurrence.category_id ?? "");
   const [times, setTimes] = useState(recurrence.occurrences === null ? "" : String(recurrence.occurrences));
   const [autoPaid, setAutoPaid] = useState(recurrence.auto_paid);
+  // Fechar sem salvar pede confirmação quando algo mudou
+  useUnsavedChanges({ description, amount, day, accountId, destinationId, categoryId, times, autoPaid });
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
   const [confirmDelete, setConfirmDelete] = useState(false);
 

@@ -5,7 +5,7 @@ import { FormError, MoneyField } from "../../components/fields";
 import { Money } from "../../components/Money";
 import { MonthSwitcher } from "../../components/MonthSwitcher";
 import { PageHeader } from "../../components/PageHeader";
-import { Sheet } from "../../components/Sheet";
+import { Sheet, useUnsavedChanges } from "../../components/Sheet";
 import { Button, Card, SectionTitle } from "../../components/ui";
 import { api } from "../../lib/api";
 import { moneyToInput, parseMoney } from "../../lib/money";
@@ -133,6 +133,8 @@ export function BudgetsPage() {
 
 function BudgetForm({ householdId, editing, onDone }: { householdId: string; editing: Editing; onDone: () => void }) {
   const [amount, setAmount] = useState(editing.amount ? moneyToInput(editing.amount) : "");
+  // Fechar sem salvar pede confirmação quando algo mudou
+  useUnsavedChanges(amount);
   const [localError, setLocalError] = useState<string>();
   const base = `/households/${householdId}/budgets/${editing.categoryId}`;
   const save = useHouseholdMutation(householdId, (value: number) => api.put(base, { amount: value }));
