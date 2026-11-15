@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
 import { FormError, MoneyField, Segmented, SelectField, Toggle } from "../../components/fields";
-import { Sheet } from "../../components/Sheet";
+import { Sheet, useUnsavedChanges } from "../../components/Sheet";
 import { Button, TextField } from "../../components/ui";
 import { api } from "../../lib/api";
 import { moneyToInput, parseMoney, today } from "../../lib/money";
@@ -150,6 +150,8 @@ function TransactionForm({
   const [paymentDate, setPaymentDate] = useState(transaction?.payment_date ?? today());
   const [repeat, setRepeat] = useState(prefill?.repeat ?? false);
   const [times, setTimes] = useState("");
+  // Fechar sem salvar pede confirmação quando algo mudou
+  useUnsavedChanges({ type, amount, description, accountId, destinationId, categoryId, dueDate, paid, paymentDate, repeat, times });
   const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);

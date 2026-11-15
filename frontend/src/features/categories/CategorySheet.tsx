@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { categoryColors, categoryIcons } from "../../components/CategoryIcon";
 import { FormError, Segmented } from "../../components/fields";
-import { Sheet } from "../../components/Sheet";
+import { Sheet, useUnsavedChanges } from "../../components/Sheet";
 import { Button, TextField } from "../../components/ui";
 import { api } from "../../lib/api";
 import { errorMessage, fieldErrors, useHouseholdMutation } from "../../lib/mutations";
@@ -63,6 +63,8 @@ function CategoryForm({
   const [type, setType] = useState<CategoryType>(category?.type ?? defaultType);
   const [color, setColor] = useState<string | null>(category?.color ?? categoryColors[0].value);
   const [icon, setIcon] = useState<string | null>(category?.icon ?? "tag");
+  // Fechar sem salvar pede confirmação quando algo mudou
+  useUnsavedChanges({ name, type, color, icon });
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const base = `/households/${householdId}/categories`;

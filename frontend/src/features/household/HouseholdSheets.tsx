@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { FormError, SelectField } from "../../components/fields";
-import { Sheet } from "../../components/Sheet";
+import { Sheet, useUnsavedChanges } from "../../components/Sheet";
 import { Button, TextField } from "../../components/ui";
 import { api } from "../../lib/api";
 import { errorMessage, fieldErrors, useAccountMutation, useHouseholdMutation } from "../../lib/mutations";
@@ -37,6 +37,8 @@ function NameForm({
   onCreated?: (household: Household) => void;
 }) {
   const [name, setName] = useState(household?.name ?? "");
+  // Fechar sem salvar pede confirmação quando algo mudou
+  useUnsavedChanges(name);
   const save = useAccountMutation((value: string) =>
     household
       ? api.patch<Household>(`/households/${household.id}`, { name: value })
@@ -94,6 +96,8 @@ export function InviteSheet({ householdId, open, onClose }: { householdId: strin
 function InviteForm({ householdId, onDone }: { householdId: string; onDone: () => void }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("member");
+  // Fechar sem salvar pede confirmação quando algo mudou
+  useUnsavedChanges({ email, role });
   const invite = useHouseholdMutation(householdId, (input: { email: string; role: Role }) =>
     api.post<Invitation>(`/households/${householdId}/invitations`, input)
   );

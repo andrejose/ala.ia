@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { FormError, MoneyField, SelectField } from "../../components/fields";
-import { Sheet } from "../../components/Sheet";
+import { Sheet, useUnsavedChanges } from "../../components/Sheet";
 import { Button, TextField } from "../../components/ui";
 import { api } from "../../lib/api";
 import { moneyToInput, parseMoney } from "../../lib/money";
@@ -45,6 +45,8 @@ function AccountForm({ householdId, account, onDone }: { householdId: string; ac
   const card = type === "credit_card";
   const [balanceError, setBalanceError] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Fechar sem salvar pede confirmação quando algo mudou
+  useUnsavedChanges({ name, type, balance });
 
   const base = `/households/${householdId}/accounts`;
   const save = useHouseholdMutation(householdId, (input: AccountInput) =>

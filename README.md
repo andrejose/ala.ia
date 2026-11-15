@@ -15,6 +15,7 @@ Sistema de controle financeiro pessoal e compartilhado: uma **API REST** (Node.j
 - **Cartão de crédito**: cada compra é uma despesa no cartão, com a sua categoria, e o saldo negativo aparece como **fatura em aberto**. "Pagar fatura" abre a transferência da conta corrente para o cartão já preenchida; como transferência não tem categoria, o pagamento não conta duas vezes nos relatórios.
 - **Categorias** de receita e despesa, com cor e ícone. Todo cadastro já começa com Salário, Mercado, Transporte e Lazer.
 - **Lançamentos**: receitas, despesas e transferências entre contas; pendentes (a pagar ou a receber) não entram no saldo até serem marcados como pagos.
+- **Formulários protegidos**: fechar um formulário com algo preenchido e não salvo (pelo X, pelo fundo ou pelo Esc) pede confirmação antes de descartar; depois de salvar, fecha direto.
 - **Tabela de lançamentos**: todos os lançamentos numa tabela com colunas ordenáveis (data, descrição, categoria, conta, valor e situação) e filtros por período, texto da descrição (sem diferenciar acentos), categoria (inclusive "sem categoria"), conta, tipo, situação e valor, guardados no endereço da página. Mostra os totais do filtro, troca a categoria de vários lançamentos de uma vez (os marcados ou todos do filtro) e exporta em CSV para o Excel. Nos relatórios, tocar numa categoria abre a tabela já filtrada por ela.
 - **Orçamento por categoria**: um limite por mês para cada categoria de despesa ("até R$ 800,00 em mercado"), com barra de quanto já foi, o que falta ou quanto passou, as contas a pagar incluídas. As categorias mais perto do limite aparecem no painel.
 - **Lançamentos recorrentes**: aluguel, salário, assinaturas e parcelas. Ao lançar, ligue "Repetir todo mês" (com ou sem número de vezes): cada mês entra sozinho, a pagar ou a receber até o mês seguinte, ou já pago no dia com débito automático. Parcelas ganham a numeração, como "Geladeira (2/10)". Editar a regra refaz só os lançamentos futuros ainda não pagos; pular um mês é só excluir o lançamento dele.
@@ -205,7 +206,7 @@ Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (
 
 ### Frontend
 
-São **62 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
+São **68 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
 
 ```bash
 cd frontend
