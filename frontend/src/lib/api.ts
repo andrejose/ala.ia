@@ -125,10 +125,12 @@ interface RequestOptions {
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
   auth?: boolean;
+  /** Devolve o corpo como arquivo (Blob), ex.: o CSV da exportação */
+  blob?: boolean;
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}, retried = false): Promise<T> {
-  const { method = "GET", body, query, auth = true } = options;
+  const { method = "GET", body, query, auth = true, blob = false } = options;
 
   const url = new URL(BASE_URL + path, window.location.origin);
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -156,6 +158,7 @@ export async function request<T>(path: string, options: RequestOptions = {}, ret
   }
 
   if (response.status === 204) return undefined as T;
+  if (blob && response.ok) return (await response.blob()) as T;
 
   const data = await response.json().catch(() => null);
   if (!response.ok) throw new ApiError(response.status, data);
@@ -169,4 +172,5 @@ export const api = {
   put: <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: "PATCH", body }),
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
+  download: (path: string, query?: RequestOptions["query"]) => request<Blob>(path, { query, blob: true }),
 };

@@ -1,6 +1,6 @@
 import { ArrowDownLeft, ArrowUpRight, Scale } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { CategoryIcon } from "../../components/CategoryIcon";
 import { Segmented } from "../../components/fields";
 import { Money } from "../../components/Money";
@@ -18,7 +18,7 @@ import {
   shiftMonth,
   shortMonthName,
 } from "../../lib/format";
-import { today } from "../../lib/money";
+import { monthPeriod, periodPresets, type Period } from "../../lib/periods";
 import { currentMonth, useMonthlySeries, usePeriodSummary, useSpendingByCategory, type ReportRange } from "../../lib/queries";
 import type { CategoryType, ReportByCategory, ReportSummary } from "../../lib/types";
 import { useHousehold } from "../household/HouseholdProvider";
@@ -33,10 +33,6 @@ const fallbackColors = ["var(--primary)", "var(--accent)", "var(--pending)", "va
 
 type CategoryRow = ReportByCategory["categories"][number];
 type Mode = "month" | "period";
-interface Period {
-  from: string;
-  to: string;
-}
 
 function colorOf(category: CategoryRow, index: number) {
   return category.color ?? fallbackColors[index % fallbackColors.length];
@@ -183,16 +179,7 @@ function MonthReport({
 // ---------------------------------------------------------------------------
 // Modo Período: datas De e Até, com atalhos
 // ---------------------------------------------------------------------------
-function presets(): Array<{ label: string; period: Period }> {
-  const day = today();
-  const year = Number(day.slice(0, 4));
-  return [
-    { label: "Últimos 30 dias", period: { from: addDays(day, -29), to: day } },
-    { label: "Últimos 3 meses", period: { from: addDays(addMonthsToDate(day, -3), 1), to: day } },
-    { label: "Este ano", period: { from: `${year}-01-01`, to: `${year}-12-31` } },
-    { label: "Ano passado", period: { from: `${year - 1}-01-01`, to: `${year - 1}-12-31` } },
-  ];
-}
+const presets = periodPresets;
 
 function periodProblem({ from, to }: Period): string | null {
   if (from > to) return "A data inicial precisa ser antes da final.";
@@ -621,7 +608,12 @@ function ByCategory({
               {categories.map((c, index) => {
                 const share = percent(c.total, total);
                 return (
-                  <li key={c.category_id} className="flex items-center gap-3">
+                  <li key={c.category_id}>
+                    <Link
+                      to={tableLink(range, type, c.category_id)}
+                      title={`Ver os lançamentos de ${c.name}`}
+                      className="-mx-2 flex items-center gap-3 rounded-xl px-2 py-1 transition hover:bg-surface-2/60"
+                    >
                     <CategoryIcon icon={c.icon} color={c.color} size="sm" />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2 text-sm">
@@ -646,6 +638,7 @@ function ByCategory({
                       </p>
                     </div>
                     <span className="w-10 self-start text-right text-xs font-bold text-muted tabular">{share}%</span>
+                    </Link>
                   </li>
                 );
               })}
@@ -655,6 +648,12 @@ function ByCategory({
       </Card>
     </section>
   );
+}
+
+// Tabela de lançamentos já filtrada pela categoria, pelo tipo e pelo mês ou período
+function tableLink(range: ReportRange, type: CategoryType, categoryId: string) {
+  const { from, to } = typeof range === "string" ? monthPeriod(range) : range;
+  return `/lancamentos/tabela?${new URLSearchParams({ categoria: categoryId, tipo: type, de: from, ate: to })}`;
 }
 
 // Rosca em SVG: cada categoria é um arco do círculo, proporcional ao total

@@ -15,6 +15,7 @@ import type {
   ReportSummary,
   Recurrence,
   TransactionList,
+  TransactionSearchResult,
 } from "./types";
 
 // Consultas à API com cache (TanStack Query). As chaves começam pelo
@@ -162,6 +163,19 @@ export function useBudgets(householdId: string | undefined, month: string) {
     queryKey: ["households", householdId, "budgets", month],
     queryFn: () => api.get<BudgetList>(`/households/${householdId}/budgets`, { month }),
     enabled: !!householdId,
+    placeholderData: keepPreviousData,
+  });
+}
+
+// Tabela de lançamentos: filtros e ordenação já no formato da API
+export type TransactionSearchParams = Record<string, string | number | undefined>;
+
+export function useTransactionSearch(householdId: string | undefined, params: TransactionSearchParams) {
+  return useQuery({
+    queryKey: ["households", householdId, "transactions", "search", params],
+    queryFn: () => api.get<TransactionSearchResult>(`/households/${householdId}/transactions/search`, params),
+    enabled: !!householdId,
+    // Ao trocar filtro ou página, a tabela anterior fica até a nova chegar
     placeholderData: keepPreviousData,
   });
 }

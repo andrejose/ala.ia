@@ -1,4 +1,4 @@
-import { FileUp, Plus } from "lucide-react";
+import { FileUp, Plus, Table2 } from "lucide-react";
 import { Link } from "react-router";
 import { useMemo, useState } from "react";
 import { SelectField } from "../../components/fields";
@@ -79,12 +79,22 @@ export function TransactionsPage() {
         title="Lançamentos"
         action={
           <div className="flex gap-2">
+            {/* No celular, só o ícone (o nome fica para leitores de tela) */}
+            <Link
+              to="/lancamentos/tabela"
+              aria-label="Tabela"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-primary-soft px-3 text-sm font-bold text-primary transition hover:brightness-95 sm:px-4"
+            >
+              <Table2 className="size-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Tabela</span>
+            </Link>
             <Link
               to="/importar"
-              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-primary-soft px-4 text-sm font-bold text-primary transition hover:brightness-95"
+              aria-label="Importar"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-primary-soft px-3 text-sm font-bold text-primary transition hover:brightness-95 sm:px-4"
             >
               <FileUp className="size-4" aria-hidden="true" />
-              Importar
+              <span className="hidden sm:inline">Importar</span>
             </Link>
             <Button onClick={() => sheet.openNew()} className="h-10 px-4 text-sm">
               <Plus className="size-4" aria-hidden="true" />

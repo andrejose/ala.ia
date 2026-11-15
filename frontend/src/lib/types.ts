@@ -231,3 +231,28 @@ export interface BudgetList {
   total: { amount: number; spent: number; remaining: number };
   budgets: Budget[];
 }
+
+// Tabela de lançamentos (GET /households/:id/transactions/search)
+export interface TransactionSearchRow {
+  id: string;
+  type: TransactionType;
+  description: string;
+  amount: number;
+  account_id: string;
+  destination_account_id: string | null;
+  category_id: string | null;
+  due_date: string;
+  payment_date: string | null;
+  recurrence_id: string | null;
+  imported: boolean;
+  account_name: string;
+  destination_account_name: string | null;
+  category_name: string | null;
+  status: "paid" | "pending";
+}
+
+export interface TransactionSearchResult {
+  data: TransactionSearchRow[];
+  pagination: { total: number; limit: number; offset: number };
+  totals: { count: number; income: number; expense: number; transfer: number };
+}

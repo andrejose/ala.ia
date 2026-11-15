@@ -15,6 +15,7 @@ Sistema de controle financeiro pessoal e compartilhado: uma **API REST** (Node.j
 - **Cartão de crédito**: cada compra é uma despesa no cartão, com a sua categoria, e o saldo negativo aparece como **fatura em aberto**. "Pagar fatura" abre a transferência da conta corrente para o cartão já preenchida; como transferência não tem categoria, o pagamento não conta duas vezes nos relatórios.
 - **Categorias** de receita e despesa, com cor e ícone. Todo cadastro já começa com Salário, Mercado, Transporte e Lazer.
 - **Lançamentos**: receitas, despesas e transferências entre contas; pendentes (a pagar ou a receber) não entram no saldo até serem marcados como pagos.
+- **Tabela de lançamentos**: todos os lançamentos numa tabela com colunas ordenáveis (data, descrição, categoria, conta, valor e situação) e filtros por período, texto da descrição (sem diferenciar acentos), categoria (inclusive "sem categoria"), conta, tipo, situação e valor, guardados no endereço da página. Mostra os totais do filtro, troca a categoria de vários lançamentos de uma vez (os marcados ou todos do filtro) e exporta em CSV para o Excel. Nos relatórios, tocar numa categoria abre a tabela já filtrada por ela.
 - **Orçamento por categoria**: um limite por mês para cada categoria de despesa ("até R$ 800,00 em mercado"), com barra de quanto já foi, o que falta ou quanto passou, as contas a pagar incluídas. As categorias mais perto do limite aparecem no painel.
 - **Lançamentos recorrentes**: aluguel, salário, assinaturas e parcelas. Ao lançar, ligue "Repetir todo mês" (com ou sem número de vezes): cada mês entra sozinho, a pagar ou a receber até o mês seguinte, ou já pago no dia com débito automático. Parcelas ganham a numeração, como "Geladeira (2/10)". Editar a regra refaz só os lançamentos futuros ainda não pagos; pular um mês é só excluir o lançamento dele.
 - **Importação de extratos**: envie o extrato do Banco do Brasil ou do Santander, ou a fatura do cartão Nubank, em CSV ou PDF, a fatura do cartão Santander e o extrato da poupança do Banco do Brasil em PDF, ou um OFX de qualquer banco, e confira a **prévia** antes de gravar: categoria sugerida pelo que você já lançou (o IOF de uma compra no exterior segue a categoria da compra), linhas já importadas ou parecidas com lançamentos feitos à mão marcadas, e tudo gravado de uma vez. Reimportar o mesmo extrato não duplica nada (nem o mesmo extrato em CSV e depois em PDF), e o arquivo não fica guardado.
@@ -127,7 +128,7 @@ A documentação completa, com exemplos e todos os erros, fica no Swagger: **htt
 | Convites | `GET`, `POST /households/:id/invitations`; `DELETE /households/:id/invitations/:invitationId`; `GET /invitations`; `POST /invitations/:id/accept` e `/decline` |
 | Contas | CRUD em `/households/:id/accounts` |
 | Categorias | CRUD em `/households/:id/categories` |
-| Lançamentos | CRUD em `/households/:id/transactions`, com filtros e paginação |
+| Lançamentos | CRUD em `/households/:id/transactions`, com filtros e paginação; `GET .../transactions/search` (tabela), `GET .../transactions/export` (CSV) e `POST .../transactions/recategorize` (categoria em lote) |
 | Relatórios | `GET /households/:id/reports/summary`, `/reports/by-category` e `/reports/monthly`, por mês (`month`) ou período (`from` e `to`) |
 | Orçamento | `GET /households/:id/budgets?month=YYYY-MM`; `PUT` e `DELETE /households/:id/budgets/:categoryId` |
 | Recorrentes | CRUD em `/households/:id/recurrences` e `POST /households/:id/recurrences/materialize` (gera os meses que faltam) |
@@ -179,7 +180,7 @@ O Vite repassa as chamadas de `/api` para o backend, então não é preciso conf
 
 ### Banco (pgTAP)
 
-São **118 testes** em SQL, em `backend/supabase/tests/database/`, que falam direto com o Postgres, sem passar pela API. Cada arquivo roda numa transação desfeita no fim, então nada fica no banco local.
+São **130 testes** em SQL, em `backend/supabase/tests/database/`, que falam direto com o Postgres, sem passar pela API. Cada arquivo roda numa transação desfeita no fim, então nada fica no banco local.
 
 ```bash
 cd backend
@@ -191,7 +192,7 @@ Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de s
 
 ### Backend
 
-São **156 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+São **166 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
 ```bash
 cd backend
@@ -204,7 +205,7 @@ Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (
 
 ### Frontend
 
-São **52 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
+São **60 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
 
 ```bash
 cd frontend
