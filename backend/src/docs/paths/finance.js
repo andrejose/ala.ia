@@ -2,6 +2,13 @@ import { createAccountSchema, listAccountsQuery, updateAccountSchema } from "../
 import { createCategorySchema, listCategoriesQuery, updateCategorySchema } from "../../schemas/categories.schemas.js";
 import { budgetParams, upsertBudgetSchema } from "../../schemas/budgets.schemas.js";
 import {
+  exportQueryFields,
+  MAX_BULK,
+  MAX_EXPORT,
+  recategorizeSchema,
+  searchQueryFields,
+} from "../../schemas/transactionSearch.schemas.js";
+import {
   createRecurrenceSchema,
   deleteRecurrenceQuery,
   updateRecurrenceSchema,
@@ -395,6 +402,59 @@ export const financePaths = {
       tags: ["Orçamento"],
       summary: "Tira o limite de uma categoria",
       responses: { 204: noContent("Limite removido."), 400: badRequest, 401: unauthorized, 404: notFound },
+    },
+  },
+
+  "/households/{householdId}/transactions/search": {
+    parameters: [householdIdParam],
+    get: {
+      tags: ["Lançamentos"],
+      summary: "Busca lançamentos com filtros e ordenação (tabela)",
+      description:
+        "Todos os filtros são opcionais e se somam. Listas vão separadas por vírgula. A busca na descrição não " +
+        "diferencia maiúsculas nem acentos. Traz os nomes da conta, da conta de destino e da categoria, a situação " +
+        "e os totais de tudo o que passou no filtro (não só da página).",
+      parameters: queryParams(searchQueryFields),
+      responses: { 200: json("Página da busca, com os totais do filtro.", ref("TransactionSearch")), 400: badRequest, 401: unauthorized, 404: notFound },
+    },
+  },
+
+  "/households/{householdId}/transactions/export": {
+    parameters: [householdIdParam],
+    get: {
+      tags: ["Lançamentos"],
+      summary: "Exporta em CSV os lançamentos do filtro",
+      description:
+        `Mesmos filtros e ordenação da busca, até ${MAX_EXPORT} linhas. Formato do Excel em português: separador ` +
+        "`;`, vírgula decimal, datas DD/MM/AAAA e BOM. Despesas saem com valor negativo.",
+      parameters: queryParams(exportQueryFields),
+      responses: {
+        200: { description: "Arquivo CSV.", content: { "text/csv": { schema: { type: "string" } } } },
+        400: badRequest,
+        401: unauthorized,
+        404: notFound,
+      },
+    },
+  },
+
+  "/households/{householdId}/transactions/recategorize": {
+    parameters: [householdIdParam],
+    post: {
+      tags: ["Lançamentos"],
+      summary: "Troca a categoria de vários lançamentos",
+      description:
+        `Pelos ids (até ${MAX_BULK}) ou por um filtro (os mesmos campos da busca). Só muda os lançamentos do ` +
+        "mesmo tipo da categoria; transferências e os de outro tipo ficam como estão e entram em `skipped`.",
+      requestBody: jsonBody(recategorizeSchema),
+      responses: {
+        200: json("Quantos mudaram e quantos ficaram de fora.", {
+          type: "object",
+          properties: { updated: { type: "integer", example: 112 }, skipped: { type: "integer", example: 0 } },
+        }),
+        400: badRequest,
+        401: unauthorized,
+        404: error("Categoria inexistente ou de outro household.", "NOT_FOUND", "Categoria não encontrada."),
+      },
     },
   },
 };

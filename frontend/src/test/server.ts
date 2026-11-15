@@ -14,6 +14,7 @@ import type {
   ReportByCategory,
   ReportSummary,
   Transaction,
+  TransactionSearchRow,
 } from "../lib/types";
 
 // =============================================================================
@@ -76,6 +77,12 @@ function initialDb() {
       periods: {} as Record<string, MonthTotals>,
     },
     reportRequests: [] as string[],
+    // Tabela de lançamentos: a resposta da busca (cada teste monta a sua) e o
+    // que o app pediu (query string da busca e da exportação, corpo do lote)
+    search: { rows: [] as TransactionSearchRow[], total: 0, totals: { count: 0, income: 0, expense: 0, transfer: 0 } },
+    searchRequests: [] as string[],
+    exportRequests: [] as string[],
+    recategorizeRequests: [] as unknown[],
     // O que o app enviou nas mutações, para os testes conferirem
     requests: {
       transactions: [] as unknown[],
@@ -209,6 +216,29 @@ const handlers = [
       data: db.transactions.slice(offset, offset + limit),
       pagination: { total: db.transactions.length, limit, offset },
     });
+  }),
+  http.get("*/api/households/:id/transactions/search", ({ request }) => {
+    const url = new URL(request.url);
+    db.searchRequests.push(url.search.slice(1));
+    const limit = Number(url.searchParams.get("limit") ?? 50);
+    const offset = Number(url.searchParams.get("offset") ?? 0);
+    return HttpResponse.json({
+      data: db.search.rows.slice(offset, offset + limit),
+      pagination: { total: db.search.total, limit, offset },
+      totals: db.search.totals,
+    });
+  }),
+  http.get("*/api/households/:id/transactions/export", ({ request }) => {
+    db.exportRequests.push(new URL(request.url).search.slice(1));
+    return new HttpResponse(["Data;Descrição", ""].join(String.fromCharCode(13, 10)), {
+      headers: { "Content-Type": "text/csv; charset=utf-8" },
+    });
+  }),
+  http.post("*/api/households/:id/transactions/recategorize", async ({ request }) => {
+    const body = (await request.json()) as { ids?: string[] };
+    db.recategorizeRequests.push(body);
+    const updated = body.ids ? body.ids.length : db.search.total;
+    return HttpResponse.json({ updated, skipped: 0 });
   }),
   http.post("*/api/households/:id/transactions", async ({ request, params }) => {
     const body = (await request.json()) as Omit<Transaction, "id" | "household_id" | "user_id">;

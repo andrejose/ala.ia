@@ -7,6 +7,7 @@ import * as imports from "../controllers/imports.controller.js";
 import * as invitations from "../controllers/invitations.controller.js";
 import * as recurrences from "../controllers/recurrences.controller.js";
 import * as reports from "../controllers/reports.controller.js";
+import * as transactionSearch from "../controllers/transactionSearch.controller.js";
 import * as transactions from "../controllers/transactions.controller.js";
 import { requireAuth } from "../middlewares/auth.js";
 import { loadHousehold, requireOwner } from "../middlewares/household.js";
@@ -33,6 +34,7 @@ import {
   listTransactionsQuery,
   updateTransactionSchema,
 } from "../schemas/transactions.schemas.js";
+import { exportQuery, recategorizeSchema, searchQuery } from "../schemas/transactionSearch.schemas.js";
 
 export const householdsRoutes = Router();
 householdsRoutes.use(requireAuth);
@@ -88,6 +90,10 @@ household.delete("/categories/:id", validate({ params: idParams }), categories.r
 // Lançamentos
 household.get("/transactions", validate({ query: listTransactionsQuery }), transactions.list);
 household.post("/transactions", validate({ body: createTransactionSchema }), transactions.create);
+// Tabela: busca com filtros, troca de categoria em lote e CSV (antes de /:id)
+household.get("/transactions/search", validate({ query: searchQuery }), transactionSearch.list);
+household.get("/transactions/export", validate({ query: exportQuery }), transactionSearch.exportCsv);
+household.post("/transactions/recategorize", validate({ body: recategorizeSchema }), transactionSearch.recategorize);
 household.get("/transactions/:id", validate({ params: idParams }), transactions.get);
 household.patch(
   "/transactions/:id",

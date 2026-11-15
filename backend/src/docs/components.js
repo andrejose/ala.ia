@@ -230,6 +230,49 @@ export const components = {
       },
     },
 
+    TransactionSearch: {
+      type: "object",
+      properties: {
+        data: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string", format: "uuid" },
+              type: { type: "string", enum: ["income", "expense", "transfer"] },
+              description: { type: "string", example: "POSTO LINHA VERDE" },
+              amount: { type: "number", example: 228.49 },
+              account_id: { type: "string", format: "uuid" },
+              destination_account_id: { type: ["string", "null"], format: "uuid" },
+              category_id: { type: ["string", "null"], format: "uuid" },
+              due_date: { type: "string", format: "date" },
+              payment_date: { type: ["string", "null"], format: "date" },
+              recurrence_id: { type: ["string", "null"], format: "uuid" },
+              imported: { type: "boolean", description: "Veio de uma importação de extrato." },
+              account_name: { type: "string", example: "Corrente" },
+              destination_account_name: { type: ["string", "null"], example: null },
+              category_name: { type: ["string", "null"], example: "Indefinido" },
+              status: { type: "string", enum: ["paid", "pending"] },
+            },
+          },
+        },
+        pagination: {
+          type: "object",
+          properties: { total: { type: "integer" }, limit: { type: "integer" }, offset: { type: "integer" } },
+        },
+        totals: {
+          type: "object",
+          description: "De tudo o que passou no filtro, não só da página.",
+          properties: {
+            count: { type: "integer", example: 112 },
+            income: { type: "number", example: 0 },
+            expense: { type: "number", example: 4380 },
+            transfer: { type: "number", example: 0 },
+          },
+        },
+      },
+    },
+
     BudgetList: {
       type: "object",
       properties: {

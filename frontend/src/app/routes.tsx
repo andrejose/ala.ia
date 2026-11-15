@@ -15,6 +15,7 @@ import { MorePage } from "../features/more/MorePage";
 import { RecurrencesPage } from "../features/recurrences/RecurrencesPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
 import { TransactionsPage } from "../features/transactions/TransactionsPage";
+import { TransactionsTablePage } from "../features/transactions/TransactionsTablePage";
 import { TransactionSheetProvider } from "../features/transactions/TransactionSheet";
 import { ApiError } from "../lib/api";
 
@@ -66,6 +67,7 @@ export const routes: RouteObject[] = [
             children: [
               { index: true, element: <DashboardPage /> },
               { path: "lancamentos", element: <TransactionsPage /> },
+              { path: "lancamentos/tabela", element: <TransactionsTablePage /> },
               { path: "importar", element: <ImportPage /> },
               { path: "recorrentes", element: <RecurrencesPage /> },
               { path: "orcamento", element: <BudgetsPage /> },
