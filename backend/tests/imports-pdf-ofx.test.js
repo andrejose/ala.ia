@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import request from "supertest";
 import { beforeAll, describe, expect, it } from "vitest";
 import { app } from "../src/app.js";
-import { bbPdf, nubankPdf, santanderCardPdf, santanderPdf } from "./fixtures/extratos/pdfs.js";
+import { bbPdf, bbSavingsPdf, nubankPdf, santanderCardPdf, santanderPdf } from "./fixtures/extratos/pdfs.js";
 import { buildPdf } from "./helpers/pdf.js";
 import { createAccount, createCategory, createTestUser } from "./helpers/users.js";
 
@@ -141,6 +141,22 @@ describe("Importação de PDF", () => {
 
     expect(res.body.rows.find((r) => r.description === "MERCADO EXEMPLO").date).toBe("2026-10-02");
     expect(res.body.rows.find((r) => r.description.startsWith("PET EXEMPLO")).date).toBe("2026-12-30");
+  });
+
+  it("BB poupança: rendimento como receita e transferências desmarcadas", async () => {
+    const savings = await createAccount(ana, { name: "Poupança BB", type: "savings" });
+    const res = await preview(savings.id, bbSavingsPdf());
+
+    expect(res.status).toBe(200);
+    expect(res.body.source).toEqual({ id: "bb-savings-pdf", label: "Poupança do Banco do Brasil (PDF)", kind: "checking" });
+    expect(res.body.kind_mismatch).toBe(false);
+    expect(pick(res.body.rows)).toEqual([
+      { date: "2026-10-01", description: "Transferência de Crédito", amount: 1000, type: "income", selected: false },
+      { date: "2026-10-14", description: "Reajuste Monetário - Bacen", amount: 5.13, type: "income", selected: true },
+      { date: "2026-10-14", description: "Juros", amount: 15.01, type: "income", selected: true },
+      { date: "2026-10-30", description: "Transferencia Para Conta", amount: 513.91, type: "expense", selected: false },
+    ]);
+    expect(res.body.rows[0].note).toMatch(/transferência entre as contas/);
   });
 
   it("recusa PDF corrompido e PDF de outro banco (400)", async () => {
