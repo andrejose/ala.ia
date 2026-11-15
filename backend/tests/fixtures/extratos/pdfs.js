@@ -180,3 +180,32 @@ export function santanderCardPdf({ closing = "30/10", due = "08/11/2026" } = {})
     ],
   ]);
 }
+
+// Banco do Brasil, poupança: data e valor numa linha, descrição na de baixo.
+// Depois da tabela vêm os "Saldos por data-base", que não são lançamentos.
+export function bbSavingsPdf() {
+  const entry = (y, date, value, description) => [
+    { x: 30, y, text: date },
+    { x: 450, y, text: value },
+    { x: 30, y: y - 18, text: description },
+  ];
+  return buildPdf([
+    [
+      { x: 30, y: 800, text: "Extrato de Poupança" },
+      { x: 30, y: 780, text: "Pessoa Exemplo" },
+      { x: 30, y: 750, text: "Dados da Conta" },
+      { x: 450, y: 712, text: "R$ 1.000,00" },
+      { x: 30, y: 710, text: "Saldo em 30/09/2026" },
+      { x: 450, y: 692, text: "R$ 1.506,23" },
+      { x: 30, y: 690, text: "Saldo Atual" },
+      { x: 30, y: 660, text: "Lançamentos" },
+      ...entry(630, "01/10/2026", "R$ 1.000,00", "Transferência de Crédito"),
+      ...entry(590, "14/10/2026", "R$ 5,13", "Reajuste Monetário - Bacen"),
+      ...entry(550, "14/10/2026", "R$ 15,01", "Juros"),
+      ...entry(510, "30/10/2026", "-R$ 513,91", "Transferencia Para Conta"),
+      { x: 30, y: 440, text: "Saldos por data-base" },
+      { x: 30, y: 420, text: "Dia 14" },
+      { x: 450, y: 420, text: "R$ 1.506,23" },
+    ],
+  ]);
+}
