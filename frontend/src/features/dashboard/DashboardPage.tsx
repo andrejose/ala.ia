@@ -136,10 +136,12 @@ function monthSentence(summary: ReportSummary | undefined) {
 function BalanceHero({ householdId }: { householdId: string }) {
   const accounts = useAccounts(householdId);
   const summary = useMonthSummary(householdId);
-  const total = (accounts.data ?? []).filter((a) => a.is_active).reduce((sum, a) => sum + a.current_balance, 0);
+  const active = (accounts.data ?? []).filter((a) => a.is_active);
+  const total = active.reduce((sum, a) => sum + a.current_balance, 0);
+  const groups = balanceByType(active);
 
   return (
-    <section className="relative overflow-hidden rounded-card bg-primary p-6 text-primary-ink shadow-card">
+    <section aria-label="Saldo" className="relative overflow-hidden rounded-card bg-primary p-6 text-primary-ink shadow-card">
       {/* Asa do logo, grande e suave, como ilustração de fundo */}
       <svg viewBox="0 0 64 64" className="pointer-events-none absolute -right-6 -bottom-10 size-48 opacity-20" aria-hidden="true">
         <path d="M14 42c10-1 20-7 26-18 2 9-1 18-9 22" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
@@ -154,9 +156,50 @@ function BalanceHero({ householdId }: { householdId: string }) {
           <Money value={total} className="text-primary-ink" />
         )}
       </p>
-      <p className="mt-4 max-w-xs text-sm leading-relaxed opacity-90">{monthSentence(summary.data)}</p>
+
+      {/* De onde vem o total: um bloco por tipo de conta (só com mais de um tipo) */}
+      {groups.length > 1 && (
+        <dl className="relative mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label="Saldo por tipo de conta">
+          {groups.map(({ type, label, icon: Icon, total: value, count }) => (
+            <div key={type} className="min-w-0 rounded-2xl bg-primary-ink/10 px-3 py-2">
+              <dt className="flex items-center gap-1.5 text-xs font-semibold opacity-80">
+                <Icon className="size-3.5 shrink-0" aria-hidden="true" />
+                <span className="truncate">{label}</span>
+              </dt>
+              <dd className="mt-0.5 text-sm font-bold" title={`${count} ${count === 1 ? "conta" : "contas"}`}>
+                <Money value={value} className="text-primary-ink" />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      <p className="relative mt-4 max-w-xs text-sm leading-relaxed opacity-90">{monthSentence(summary.data)}</p>
     </section>
   );
+}
+
+// Ordem dos blocos e nome de cada tipo no resumo. No cartão, o saldo negativo
+// é a fatura em aberto: aparece como "Faturas dos cartões", com o sinal de menos.
+const BALANCE_ORDER: Array<{ type: Account["type"]; label: string }> = [
+  { type: "checking", label: "Conta corrente" },
+  { type: "savings", label: "Poupança" },
+  { type: "investment", label: "Investimentos" },
+  { type: "cash", label: "Dinheiro" },
+  { type: "credit_card", label: "Faturas dos cartões" },
+];
+
+function balanceByType(accounts: Account[]) {
+  return BALANCE_ORDER.map(({ type, label }) => {
+    const ofType = accounts.filter((a) => a.type === type);
+    return {
+      type,
+      label,
+      icon: accountTypes[type].icon,
+      total: ofType.reduce((sum, a) => sum + a.current_balance, 0),
+      count: ofType.length,
+    };
+  }).filter((group) => group.count > 0);
 }
 
 // ---------------------------------------------------------------------------
