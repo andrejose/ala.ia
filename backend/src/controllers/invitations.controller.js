@@ -1,6 +1,9 @@
 // Convites para households (fluxo em 09_invitations.sql):
 //   o dono convida -> a pessoa aceita ou recusa -> o dono pode cancelar antes.
 
+import { invitationEmail } from "../emails/invitation.js";
+import { mailer } from "../lib/mailer.js";
+
 const invitationColumns = "id, household_id, email, role, status, created_at, expires_at, invited_by, profiles (name)";
 
 function toInvitationDto({ profiles, invited_by, ...rest }) {
@@ -43,7 +46,34 @@ export async function create(req, res) {
     .single();
   if (selectError) throw selectError;
 
-  res.status(201).json(toInvitationDto(data));
+  const invitation = toInvitationDto(data);
+  const email_sent = await sendInvitationEmail(invitation, req.household.name);
+  res.status(201).json({ ...invitation, email_sent });
+}
+
+// Avisa a pessoa por e-mail. Falhar aqui não desfaz o convite: ele continua
+// aparecendo para ela no Ala.ia, e a tela diz que o e-mail não foi.
+async function sendInvitationEmail(invitation, householdName) {
+  if (!mailer.enabled()) return false;
+  try {
+    await mailer.send(
+      invitationEmail({
+        to: invitation.email,
+        householdName,
+        inviterName: invitation.invited_by?.name,
+        role: invitation.role,
+        expiresAt: invitation.expires_at,
+        appUrl: mailer.appUrl(),
+      })
+    );
+    return true;
+  } catch (err) {
+    // Sem o e-mail no log: só o motivo
+    console.error(
+      JSON.stringify({ time: new Date().toISOString(), level: "error", code: "EMAIL_NOT_SENT", reason: err?.code ?? err?.message ?? "erro" })
+    );
+    return false;
+  }
 }
 
 // DELETE (dono) — cancela um convite pendente

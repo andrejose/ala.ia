@@ -143,6 +143,8 @@ export interface Invitation {
   created_at: string;
   expires_at: string;
   invited_by: { user_id: string; name: string | null } | null;
+  // Só na resposta da criação: se o e-mail de aviso foi enviado
+  email_sent?: boolean;
 }
 
 // Convite recebido pelo usuário logado (GET /invitations)

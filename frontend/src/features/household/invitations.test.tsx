@@ -16,10 +16,52 @@ describe("Convidar", () => {
     await user.selectOptions(sheet.getByRole("combobox", { name: /^Papel/ }), "Dono");
     await user.click(sheet.getByRole("button", { name: "Enviar convite" }));
 
+    const done = within(await screen.findByRole("dialog", { name: "Convite criado" }));
+    expect(done.getByText(/Mandamos um e-mail para/)).toHaveTextContent("joao@exemplo.com");
+    await user.click(done.getByRole("button", { name: "Pronto" }));
+
     expect(await screen.findByText("joao@exemplo.com")).toBeInTheDocument();
     expect(screen.getByText("Dono, vale até 18/11/2026")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(db.requests.invitations).toEqual([{ email: "joao@exemplo.com", role: "owner" }]);
+  });
+
+  it("sem o e-mail de aviso, diz isso e oferece o link para mandar à pessoa", async () => {
+    server.use(
+      http.post("*/api/households/:id/invitations", async ({ request, params }) => {
+        const body = (await request.json()) as { email: string };
+        return HttpResponse.json(
+          {
+            id: "i9",
+            household_id: String(params.id),
+            email: body.email,
+            role: "member",
+            status: "pending",
+            created_at: "2026-11-11T10:00:00Z",
+            expires_at: "2026-11-18T10:00:00Z",
+            invited_by: null,
+            email_sent: false,
+          },
+          { status: 201 }
+        );
+      })
+    );
+    const { user } = renderApp("/espaco", { loggedIn: true });
+    await user.click(await screen.findByRole("button", { name: "Convidar" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Convidar pessoa" }));
+    await user.type(sheet.getByRole("textbox", { name: "E-mail" }), "ana@exemplo.com");
+    await user.click(sheet.getByRole("button", { name: "Enviar convite" }));
+
+    const done = within(await screen.findByRole("dialog", { name: "Convite criado" }));
+    expect(done.getByText(/e-mail de aviso não foi enviado/)).toHaveTextContent("ana@exemplo.com");
+    expect(done.getByText(`${window.location.origin}/entrar`)).toBeInTheDocument();
+    await user.click(done.getByRole("button", { name: "Copiar link" }));
+    expect(await navigator.clipboard.readText()).toBe(`${window.location.origin}/entrar`);
+    expect(done.getByRole("button", { name: "Copiado" })).toBeInTheDocument();
+
+    // Fechar aqui não pede confirmação: o convite já foi criado
+    await user.click(done.getByRole("button", { name: "Pronto" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("mostra o erro da API dentro do formulário de convite", async () => {

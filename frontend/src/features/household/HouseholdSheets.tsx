@@ -86,14 +86,64 @@ function NameForm({
 // Convidar por e-mail
 // -----------------------------------------------------------------------------
 export function InviteSheet({ householdId, open, onClose }: { householdId: string; open: boolean; onClose: () => void }) {
+  const [sent, setSent] = useState<Invitation | null>(null);
+  const close = () => {
+    setSent(null);
+    onClose();
+  };
   return (
-    <Sheet open={open} onClose={onClose} title="Convidar pessoa">
-      {open && <InviteForm householdId={householdId} onDone={onClose} />}
+    <Sheet open={open} onClose={close} title={sent ? "Convite criado" : "Convidar pessoa"}>
+      {open && (sent ? <InviteSent invitation={sent} onDone={close} /> : <InviteForm householdId={householdId} onDone={setSent} />)}
     </Sheet>
   );
 }
 
-function InviteForm({ householdId, onDone }: { householdId: string; onDone: () => void }) {
+// Depois de convidar: diz se o e-mail foi e, se não foi, dá o link para avisar
+function InviteSent({ invitation, onDone }: { invitation: Invitation; onDone: () => void }) {
+  const link = `${window.location.origin}/entrar`;
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {invitation.email_sent ? (
+        <p>
+          Mandamos um e-mail para <strong className="break-all">{invitation.email}</strong> avisando do convite. A pessoa
+          aceita ao entrar no Ala.ia com esse e-mail, ou ao criar a conta com ele.
+        </p>
+      ) : (
+        <>
+          <p>
+            O convite para <strong className="break-all">{invitation.email}</strong> está criado, mas o e-mail de aviso
+            não foi enviado. Avise a pessoa para entrar no Ala.ia com esse e-mail, ou criar a conta com ele: o convite
+            aparece logo na entrada.
+          </p>
+          <div className="flex items-center gap-2 rounded-2xl bg-surface-2 p-3">
+            <span className="min-w-0 flex-1 truncate text-sm" title={link}>
+              {link}
+            </span>
+            <Button type="button" variant="soft" className="h-9 px-3 text-sm" onClick={copy}>
+              {copied ? "Copiado" : "Copiar link"}
+            </Button>
+          </div>
+        </>
+      )}
+      <Button type="button" className="w-full" onClick={onDone} autoFocus>
+        Pronto
+      </Button>
+    </div>
+  );
+}
+
+function InviteForm({ householdId, onDone }: { householdId: string; onDone: (invitation: Invitation) => void }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("member");
   // Fechar sem salvar pede confirmação quando algo mudou
@@ -113,8 +163,8 @@ function InviteForm({ householdId, onDone }: { householdId: string; onDone: () =
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-muted">
-        A pessoa recebe o convite ao entrar no Ala.ia com este e-mail, mesmo que ainda não tenha conta. Ela só
-        passa a ver as finanças depois de aceitar. O convite vale por 7 dias.
+        A pessoa recebe um e-mail de aviso e vê o convite ao entrar no Ala.ia com este e-mail, mesmo que ainda não
+        tenha conta. Só passa a ver as finanças depois de aceitar. O convite vale por 7 dias.
       </p>
       <TextField
         id="invite-email"

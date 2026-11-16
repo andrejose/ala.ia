@@ -21,7 +21,7 @@ Sistema de controle financeiro pessoal e compartilhado: uma **API REST** (Node.j
 - **Lançamentos recorrentes**: aluguel, salário, assinaturas e parcelas. Ao lançar, ligue "Repetir todo mês" (com ou sem número de vezes): cada mês entra sozinho, a pagar ou a receber até o mês seguinte, ou já pago no dia com débito automático. Parcelas ganham a numeração, como "Geladeira (2/10)". Editar a regra refaz só os lançamentos futuros ainda não pagos; pular um mês é só excluir o lançamento dele.
 - **Importação de extratos**: envie o extrato do Banco do Brasil ou do Santander, ou a fatura do cartão Nubank, em CSV ou PDF, a fatura do cartão Santander e o extrato da poupança do Banco do Brasil em PDF, ou um OFX de qualquer banco, e confira a **prévia** antes de gravar: categoria sugerida pelo que você já lançou (o IOF de uma compra no exterior segue a categoria da compra), linhas já importadas ou parecidas com lançamentos feitos à mão marcadas, e tudo gravado de uma vez. Reimportar o mesmo extrato não duplica nada (nem o mesmo extrato em CSV e depois em PDF), e o arquivo não fica guardado.
 - **Relatórios**: total de entradas e saídas do mês (pagas e pendentes), gastos e receitas por categoria em gráfico de rosca, comparação com o mês anterior e gráfico mês a mês dos últimos 6 meses. No modo **Período**, os mesmos relatórios para quaisquer datas (De e Até, até 24 meses), com atalhos (últimos 30 dias, últimos 3 meses, este ano, ano passado), comparação com o período anterior de mesmo tamanho e o período guardado no endereço da página.
-- **Espaços compartilhados** (na API, _households_): um casal, por exemplo, divide contas, categorias e lançamentos. O dono convida por e-mail e a pessoa só entra se **aceitar o convite**.
+- **Espaços compartilhados** (na API, _households_): um casal, por exemplo, divide contas, categorias e lançamentos. O dono convida por e-mail (com um aviso enviado por e-mail, se houver SMTP configurado) e a pessoa só entra se **aceitar o convite**.
 
 ## Arquitetura
 
@@ -193,7 +193,7 @@ Cobrem o cadastro (perfil, espaço "Pessoal" e categorias padrão), a regra de s
 
 ### Backend
 
-São **166 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
+São **169 testes de integração** que rodam contra o **Supabase local** e criam usuários de verdade; por segurança, eles se recusam a rodar contra outro host.
 
 ```bash
 cd backend
@@ -206,7 +206,7 @@ Para cada recurso, os testes cobrem sucesso, validação (400), falta de token (
 
 ### Frontend
 
-São **68 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
+São **69 testes** que montam o app inteiro (rotas, provedores e cache) no jsdom e o usam como uma pessoa usaria: digitando, escolhendo opções e clicando. A API é simulada pelo [MSW](https://mswjs.io/), então não precisam do backend nem do Supabase.
 
 ```bash
 cd frontend

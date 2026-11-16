@@ -378,7 +378,7 @@ const handlers = [
       invited_by: { user_id: user.id, name: user.name },
     };
     db.invitations.push(created);
-    return HttpResponse.json(created, { status: 201 });
+    return HttpResponse.json({ ...created, email_sent: true }, { status: 201 });
   }),
 ];
 

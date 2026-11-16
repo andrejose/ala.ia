@@ -1,6 +1,7 @@
 import request from "supertest";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app.js";
+import { mailer } from "../src/lib/mailer.js";
 import { createTestUser, inviteAndAccept, TEST_PASSWORD, uniqueEmail } from "./helpers/users.js";
 
 let owner;
@@ -174,5 +175,60 @@ describe("Gestão dos convites pelo household", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error.details[0].path).toBe("email");
+  });
+});
+
+describe("E-mail do convite", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("sem SMTP configurado, cria o convite e avisa que o e-mail não foi", async () => {
+    const send = vi.spyOn(mailer, "send");
+    const { base } = await newHousehold();
+    const res = await invite(base, uniqueEmail());
+
+    expect(res.status).toBe(201);
+    expect(res.body.email_sent).toBe(false);
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("com SMTP, envia o aviso para o e-mail convidado, com o espaço e quem convidou", async () => {
+    vi.spyOn(mailer, "enabled").mockReturnValue(true);
+    vi.spyOn(mailer, "appUrl").mockReturnValue("https://ala.exemplo.com");
+    const send = vi.spyOn(mailer, "send").mockResolvedValue();
+    const { base } = await newHousehold("Casa <Nova>");
+    const email = uniqueEmail();
+
+    const res = await invite(base, email);
+
+    expect(res.status).toBe(201);
+    expect(res.body.email_sent).toBe(true);
+    expect(send).toHaveBeenCalledOnce();
+    const message = send.mock.calls[0][0];
+    expect(message.to).toBe(email);
+    expect(message.subject).toBe('Dona dos Convites convidou você para o espaço "Casa <Nova>" no Ala.ia');
+    expect(message.text).toContain("https://ala.exemplo.com/entrar");
+    expect(message.text).toContain("como membro");
+    // Nome do espaço escapado no HTML
+    expect(message.html).toContain("Casa &lt;Nova&gt;");
+    expect(message.html).not.toContain("<Nova>");
+  });
+
+  it("se o envio falhar, o convite fica criado e a resposta diz que o e-mail não foi", async () => {
+    vi.spyOn(mailer, "enabled").mockReturnValue(true);
+    vi.spyOn(mailer, "appUrl").mockReturnValue("https://ala.exemplo.com");
+    vi.spyOn(mailer, "send").mockRejectedValue(Object.assign(new Error("recusado"), { code: "EAUTH" }));
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { base } = await newHousehold();
+    const email = uniqueEmail();
+
+    const res = await invite(base, email);
+
+    expect(res.status).toBe(201);
+    expect(res.body.email_sent).toBe(false);
+    const list = await request(app).get(`${base}/invitations`).set(owner.authHeader);
+    expect(list.body.map((i) => i.id)).toContain(res.body.id);
+    // O log traz o motivo, não o e-mail
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('"code":"EMAIL_NOT_SENT"'));
+    expect(log.mock.calls.join(" ")).not.toContain(email);
   });
 });

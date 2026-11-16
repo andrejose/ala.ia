@@ -14,6 +14,15 @@ const envSchema = z.object({
   STATIC_DIR: z.string().min(1).optional(),
   // Tentativas de login, cadastro e renovação de sessão por IP a cada 15 minutos
   AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(20),
+  // Endereço público do app, usado nos links dos e-mails
+  APP_URL: z.url().optional(),
+  // SMTP para o e-mail de convite (Resend, Brevo, Gmail com senha de app...).
+  // Sem SMTP_HOST, MAIL_FROM e APP_URL, o convite é criado sem e-mail.
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASS: z.string().min(1).optional(),
+  MAIL_FROM: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

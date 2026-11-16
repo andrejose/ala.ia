@@ -81,6 +81,29 @@ O link de confirmação do e-mail de cadastro aponta para a Site URL. Mantenha a
 **confirmação de e-mail ligada** (**Authentication → Sign In / Providers →
 Email**): ela é necessária para o aceite de convites ser seguro.
 
+O serviço de e-mail padrão do Supabase entrega pouco e só para endereços da
+equipe do projeto. Para quem você convidar conseguir confirmar o cadastro,
+configure um SMTP próprio em **Authentication → Emails → SMTP Settings**. Pode
+ser o mesmo da próxima seção.
+
+## 3.1 E-mail de convite (opcional)
+
+Com SMTP configurado, quem é convidado para um espaço recebe um e-mail de aviso
+com o link do app. Sem ele, o convite funciona do mesmo jeito: aparece para a
+pessoa ao entrar com o e-mail convidado, e a tela de convite oferece o link para
+você mandar.
+
+Em **Environment Variables** no Coolify, acrescente:
+
+- `APP_URL`: `https://ala.andrejose.com.br` (o link dos e-mails)
+- `SMTP_HOST`, `SMTP_PORT` (padrão 587; 465 usa TLS direto), `SMTP_USER`, `SMTP_PASS`: do seu provedor (Resend, Brevo, Gmail com senha de app...)
+- `MAIL_FROM`: o remetente, ex.: `Ala.ia <convites@andrejose.com.br>`. O domínio precisa estar verificado no provedor (registros SPF e DKIM no Cloudflare), senão o e-mail cai no spam ou é recusado.
+
+Faça **Redeploy**. Se o envio falhar, o convite é criado mesmo assim, a tela
+avisa que o e-mail não foi e os **Logs** mostram uma linha com
+`"code":"EMAIL_NOT_SENT"` e o motivo (ex.: `EAUTH` para usuário ou senha
+errados, `ESOCKET` para host ou porta errados).
+
 ## 4. Conferir
 
 - `https://ala.andrejose.com.br/api/health` responde `{"status":"ok"}`.

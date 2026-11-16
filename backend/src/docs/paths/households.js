@@ -139,7 +139,9 @@ export const householdPaths = {
       description:
         "Cria um convite pendente, que vale por 7 dias. A pessoa só vira membro quando aceitar em " +
         "`POST /invitations/{invitationId}/accept`. O e-mail não precisa ter cadastro: o convite espera a " +
-        "pessoa se cadastrar com ele, e a resposta é a mesma nos dois casos.",
+        "pessoa se cadastrar com ele, e a resposta é a mesma nos dois casos. Com SMTP configurado no servidor, " +
+        "a pessoa recebe um e-mail de aviso com o link do app; `email_sent` diz se ele foi. Falhar no e-mail não " +
+        "desfaz o convite.",
       requestBody: jsonBody(inviteMemberSchema),
       responses: {
         201: json("Convite criado.", ref("Invitation")),

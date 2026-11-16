@@ -124,6 +124,10 @@ export const components = {
           type: ["object", "null"],
           properties: { user_id: { type: "string", format: "uuid" }, name: { type: ["string", "null"] } },
         },
+        email_sent: {
+          type: "boolean",
+          description: "Só na resposta da criação: se o e-mail de aviso foi enviado (precisa de SMTP configurado no servidor).",
+        },
       },
     },
 
